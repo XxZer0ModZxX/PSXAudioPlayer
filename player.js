@@ -1,6 +1,9 @@
 // Elements
 const btnOpenBios = document.getElementById('btn-open-bios');
 const btnLoadSong = document.getElementById('btn-open'); // Map to the 'Load Music' hitbox
+const btnPlay = document.getElementById('btn-play');
+const btnStop = document.getElementById('btn-stop');
+const btnNext = document.getElementById('btn-next');
 const mainUI = document.getElementById('main-ui');
 const vizOverlay = document.getElementById('visualizer-overlay');
 const audioEngine = document.getElementById('audio-engine');
@@ -21,9 +24,10 @@ async function loadBiosFromGitHub() {
         
         await startPS1Bios(biosBuffer); 
         console.log("PS1 BIOS is now running!");
+        alert("BIOS Loaded Successfully!");
     } catch (err) {
         console.error("Critical Error loading BIOS:", err);
-        alert("Failed to load BIOS. Check console/GitHub file case.");
+        alert("Failed to load BIOS. Ensure /bios/SCPH7501.BIN exists on GitHub.");
     }
 }
 
@@ -33,39 +37,71 @@ async function loadBiosFromGitHub() {
  */
 async function loadMusicFromGitHub(trackName) {
     const musicPath = `./music/${trackName}`; 
-    console.log("Fetching Music: " + trackName);
+    console.log("Attempting to fetch: " + musicPath);
     
+    // Debug Alert 1
+    alert("Loading: " + trackName);
+
     try {
         const response = await fetch(musicPath);
-        if (!response.ok) throw new Error("Music file not found in /music/ folder.");
+        
+        if (!response.ok) {
+            alert("Error 404: File not found on GitHub. Check case sensitivity!");
+            return;
+        }
 
         const blob = await response.blob();
         const fileURL = URL.createObjectURL(blob);
         
         audioEngine.src = fileURL;
-        audioEngine.play();
+        
+        // Console interaction requirement: try to play
+        audioEngine.play().then(() => {
+            alert("Playback started!");
+        }).catch(e => {
+            alert("Playback blocked. Click the screen once then try again.");
+            console.error(e);
+        });
 
         // Feed the audio to the emulator core for the visualizer
         if (typeof syncAudioToEmulator === "function") {
             syncAudioToEmulator(audioEngine);
         }
         
-        console.log("Playing: " + trackName);
     } catch (err) {
         console.error("Error loading music:", err);
-        alert("Music error: Ensure the file exists in your GitHub 'music' folder.");
+        alert("Network Error: " + err.message);
     }
 }
 
-// Trigger Music Fetch on 'Load Music' button click
+// 1. Trigger Music Fetch on 'Load Music' button click
 btnLoadSong.onclick = () => {
-    // Change 'Track01.mp3' to match your uploaded file name!
     loadMusicFromGitHub('Track01.mp3'); 
 };
 
-// Trigger BIOS on 'Open' button click
+// 2. Trigger BIOS on 'Open' button click
 btnOpenBios.onclick = () => {
     loadBiosFromGitHub();
+};
+
+// 3. Play Button Logic
+btnPlay.onclick = () => {
+    if (audioEngine.src) {
+        audioEngine.play();
+    } else {
+        alert("No song loaded! Click the Load Music button first.");
+    }
+};
+
+// 4. Stop Button Logic
+btnStop.onclick = () => {
+    audioEngine.pause();
+    audioEngine.currentTime = 0;
+};
+
+// 5. Next Button Logic (For now, reloads the same track as a test)
+btnNext.onclick = () => {
+    loadMusicFromGitHub('Track01.mp3');
 };
 
 // Visualizer Toggle Logic
