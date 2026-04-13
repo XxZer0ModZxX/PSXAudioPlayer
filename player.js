@@ -1,3 +1,6 @@
+// Verification that the script is alive
+alert("PSX Player Script: READY");
+
 const startOverlay = document.getElementById('start-overlay');
 const btnOpenBios = document.getElementById('btn-open-bios');
 const btnLoadSong = document.getElementById('btn-open');
@@ -10,10 +13,9 @@ const audioEngine = document.getElementById('audio-engine');
 
 // 1. Initial Unlock
 startOverlay.onclick = () => {
-    // Prime the engine with a tiny bit of silence or low-level data
+    // This simple line "wakes up" the PS5 audio context
     audioEngine.play().catch(() => {}); 
-    audioEngine.pause();
-    startOverlay.classList.add('hidden');
+    startOverlay.style.display = 'none';
     console.log("Audio Context Started");
 };
 
@@ -21,32 +23,33 @@ startOverlay.onclick = () => {
  * DIRECT PLAYBACK LOGIC
  */
 function playTrack(trackName) {
-    const musicPath = `./music/${trackName}`;
+    // We use the full relative path
+    const musicPath = "./music/" + trackName;
     
-    // Setting src and play() in the same tick as the button click
+    // Set the source
     audioEngine.src = musicPath;
-    audioEngine.load(); // Force the browser to start loading
     
-    const playPromise = audioEngine.play();
-
-    if (playPromise !== undefined) {
-        playPromise.then(() => {
-            console.log("Playback success");
+    // Force play immediately
+    audioEngine.play()
+        .then(() => {
+            console.log("Success");
+            // Only try to sync if the function exists to prevent crashing
             if (typeof syncAudioToEmulator === "function") {
                 syncAudioToEmulator(audioEngine);
             }
-        }).catch(error => {
-            console.log("Playback failed. User must click Play again.");
-            // If it fails, the user now has to click the 'Play' hitbox
+        })
+        .catch(error => {
+            alert("PS5 Blocked Playback. Press the PLAY button on the left now.");
         });
-    }
 }
 
 // Button Assignments
-btnLoadSong.onclick = () => playTrack('Track01.mp3');
+btnLoadSong.onclick = () => {
+    playTrack('Track01.mp3'); 
+};
 
 btnPlay.onclick = () => {
-    audioEngine.play().catch(e => console.log("Still blocked"));
+    audioEngine.play().catch(e => alert("Error: No song loaded or blocked."));
 };
 
 btnStop.onclick = () => {
@@ -54,7 +57,9 @@ btnStop.onclick = () => {
     audioEngine.currentTime = 0;
 };
 
-btnNext.onclick = () => playTrack('Track01.mp3');
+btnNext.onclick = () => {
+    playTrack('Track01.mp3');
+};
 
 /**
  * BIOS LOGIC
@@ -64,9 +69,16 @@ async function loadBiosFromGitHub() {
         const response = await fetch('./bios/SCPH7501.BIN');
         if (!response.ok) throw new Error();
         const biosBuffer = await response.arrayBuffer();
-        await startPS1Bios(biosBuffer);
+        
+        // Ensure the WASM function exists
+        if (typeof startPS1Bios === "function") {
+            await startPS1Bios(biosBuffer);
+            alert("BIOS Running");
+        } else {
+            alert("Emulator Core not loaded yet.");
+        }
     } catch (err) {
-        console.log("BIOS load failed");
+        alert("BIOS File not found in /bios/ folder.");
     }
 }
 
@@ -77,7 +89,6 @@ document.getElementById('btn-viz-toggle').onclick = () => {
     mainUI.classList.add('hidden');
     vizOverlay.classList.remove('hidden');
     vizOverlay.classList.add('visible');
-    if (typeof resizeCanvas === "function") resizeCanvas();
 };
 
 document.getElementById('btn-exit-viz').onclick = () => {
