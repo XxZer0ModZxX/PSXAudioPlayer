@@ -1,42 +1,63 @@
 // Elements
 const btnOpenBios = document.getElementById('btn-open-bios');
+const btnLoadSong = document.getElementById('btn-open'); // Map to the 'Load Disc' hitbox
+const audioSelector = document.getElementById('audio-selector');
 const mainUI = document.getElementById('main-ui');
 const vizOverlay = document.getElementById('visualizer-overlay');
 const audioEngine = document.getElementById('audio-engine');
 
 /**
  * AUTO-LOAD BIOS LOGIC
- * This function fetches the BIOS from your GitHub folder 
- * instead of asking the PS5 to upload a local file.
  */
 async function loadBiosFromGitHub() {
-    // IMPORTANT: Ensure the filename and case match exactly in your GitHub repo
     const biosPath = './bios/SCPH7501.BIN'; 
-    
     console.log("Fetching BIOS from GitHub...");
     
     try {
         const response = await fetch(biosPath);
-        
-        if (!response.ok) {
-            throw new Error(`Server responded with ${response.status}: BIOS not found.`);
-        }
+        if (!response.ok) throw new Error(`Server responded with ${response.status}: BIOS not found.`);
 
         const biosBuffer = await response.arrayBuffer();
-        console.log("BIOS successfully downloaded into memory.");
+        console.log("BIOS downloaded. Initializing Emulator Core...");
         
-        // Start the emulator core (provided by wasmpsx.min.js)
-        console.log("Initializing Emulator Core...");
         await startPS1Bios(biosBuffer); 
-        
         console.log("PS1 BIOS is now running!");
     } catch (err) {
         console.error("Critical Error loading BIOS:", err);
-        alert("Failed to load BIOS. Make sure the file exists in /bios/SCPH7501.BIN on GitHub.");
+        alert("Failed to load BIOS. Check console/GitHub file case.");
     }
 }
 
-// Trigger the auto-load when clicking the PSX 'Open' button
+/**
+ * AUDIO LOADING LOGIC (USB/Local)
+ */
+btnLoadSong.onclick = () => {
+    // Triggers the hidden <input type="file" id="audio-selector"> in your HTML
+    audioSelector.click();
+};
+
+audioSelector.onchange = (e) => {
+    const files = e.target.files;
+    if (files.length > 0) {
+        const file = files[0];
+        console.log("Loading audio file:", file.name);
+
+        // Create a URL for the selected file
+        const fileURL = URL.createObjectURL(file);
+        audioEngine.src = fileURL;
+        audioEngine.play();
+
+        // Feed the audio to the emulator core for the visualizer
+        // This assumes 'wasmpsx' has a standard audio input hook
+        if (typeof syncAudioToEmulator === "function") {
+            syncAudioToEmulator(audioEngine);
+        }
+        
+        alert("Song loaded: " + file.name);
+    }
+};
+
+// Trigger BIOS on 'Open' button click
 btnOpenBios.onclick = () => {
     loadBiosFromGitHub();
 };
@@ -47,7 +68,6 @@ document.getElementById('btn-viz-toggle').onclick = () => {
     vizOverlay.classList.remove('hidden');
     vizOverlay.classList.add('visible');
     
-    // If your emulator core has a resize function, call it here
     if (typeof resizeCanvas === "function") {
         resizeCanvas();
     }
