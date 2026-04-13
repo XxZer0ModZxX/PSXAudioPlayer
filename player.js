@@ -1,4 +1,3 @@
-// Verification that the script is alive
 alert("PSX Player Script: READY");
 
 const startOverlay = document.getElementById('start-overlay');
@@ -13,34 +12,35 @@ const audioEngine = document.getElementById('audio-engine');
 
 // 1. Initial Unlock
 startOverlay.onclick = () => {
-    // This simple line "wakes up" the PS5 audio context
+    // This creates a user-interaction bridge
     audioEngine.play().catch(() => {}); 
     startOverlay.style.display = 'none';
-    console.log("Audio Context Started");
 };
 
 /**
- * DIRECT PLAYBACK LOGIC
+ * UPDATED PLAYBACK LOGIC
  */
 function playTrack(trackName) {
-    // We use the full relative path
     const musicPath = "./music/" + trackName;
     
-    // Set the source
+    // Reset and Load
+    audioEngine.pause();
     audioEngine.src = musicPath;
+    audioEngine.load(); // PS5 requires explicit load() sometimes
     
-    // Force play immediately
-    audioEngine.play()
-        .then(() => {
-            console.log("Success");
-            // Only try to sync if the function exists to prevent crashing
-            if (typeof syncAudioToEmulator === "function") {
-                syncAudioToEmulator(audioEngine);
-            }
-        })
-        .catch(error => {
-            alert("PS5 Blocked Playback. Press the PLAY button on the left now.");
+    alert("Attempting to play: " + trackName);
+
+    // Try to play immediately
+    var playPromise = audioEngine.play();
+
+    if (playPromise !== undefined) {
+        playPromise.then(() => {
+            console.log("Playing!");
+        }).catch(error => {
+            // If it fails, the user MUST click the 'Play' hitbox
+            alert("Loaded! Now click the pink PLAY button on the left to start sound.");
         });
+    }
 }
 
 // Button Assignments
@@ -49,7 +49,11 @@ btnLoadSong.onclick = () => {
 };
 
 btnPlay.onclick = () => {
-    audioEngine.play().catch(e => alert("Error: No song loaded or blocked."));
+    if (audioEngine.src) {
+        audioEngine.play().catch(e => alert("Blocked! Tap screen again."));
+    } else {
+        alert("Click the Load button (bottom right) first!");
+    }
 };
 
 btnStop.onclick = () => {
@@ -70,21 +74,17 @@ async function loadBiosFromGitHub() {
         if (!response.ok) throw new Error();
         const biosBuffer = await response.arrayBuffer();
         
-        // Ensure the WASM function exists
         if (typeof startPS1Bios === "function") {
             await startPS1Bios(biosBuffer);
             alert("BIOS Running");
-        } else {
-            alert("Emulator Core not loaded yet.");
         }
     } catch (err) {
-        alert("BIOS File not found in /bios/ folder.");
+        alert("BIOS File Not Found");
     }
 }
 
 btnOpenBios.onclick = () => loadBiosFromGitHub();
 
-// Visualizer Toggles
 document.getElementById('btn-viz-toggle').onclick = () => {
     mainUI.classList.add('hidden');
     vizOverlay.classList.remove('hidden');
