@@ -1,7 +1,6 @@
 // Elements
 const btnOpenBios = document.getElementById('btn-open-bios');
-const btnLoadSong = document.getElementById('btn-open'); // Map to the 'Load Disc' hitbox
-const audioSelector = document.getElementById('audio-selector');
+const btnLoadSong = document.getElementById('btn-open'); // Map to the 'Load Music' hitbox
 const mainUI = document.getElementById('main-ui');
 const vizOverlay = document.getElementById('visualizer-overlay');
 const audioEngine = document.getElementById('audio-engine');
@@ -29,32 +28,39 @@ async function loadBiosFromGitHub() {
 }
 
 /**
- * AUDIO LOADING LOGIC (USB/Local)
+ * FETCH MUSIC FROM GITHUB
+ * PS5 blocks USB/Local selection, so we fetch from your repo.
  */
-btnLoadSong.onclick = () => {
-    // Triggers the hidden <input type="file" id="audio-selector"> in your HTML
-    audioSelector.click();
-};
+async function loadMusicFromGitHub(trackName) {
+    const musicPath = `./music/${trackName}`; 
+    console.log("Fetching Music: " + trackName);
+    
+    try {
+        const response = await fetch(musicPath);
+        if (!response.ok) throw new Error("Music file not found in /music/ folder.");
 
-audioSelector.onchange = (e) => {
-    const files = e.target.files;
-    if (files.length > 0) {
-        const file = files[0];
-        console.log("Loading audio file:", file.name);
-
-        // Create a URL for the selected file
-        const fileURL = URL.createObjectURL(file);
+        const blob = await response.blob();
+        const fileURL = URL.createObjectURL(blob);
+        
         audioEngine.src = fileURL;
         audioEngine.play();
 
         // Feed the audio to the emulator core for the visualizer
-        // This assumes 'wasmpsx' has a standard audio input hook
         if (typeof syncAudioToEmulator === "function") {
             syncAudioToEmulator(audioEngine);
         }
         
-        alert("Song loaded: " + file.name);
+        console.log("Playing: " + trackName);
+    } catch (err) {
+        console.error("Error loading music:", err);
+        alert("Music error: Ensure the file exists in your GitHub 'music' folder.");
     }
+}
+
+// Trigger Music Fetch on 'Load Music' button click
+btnLoadSong.onclick = () => {
+    // Change 'track1.mp3' to match your uploaded file name!
+    loadMusicFromGitHub('track1.mp3'); 
 };
 
 // Trigger BIOS on 'Open' button click
