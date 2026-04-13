@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="mini-coi.js"></script> 
+    
+    <title>PSX CD Player</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="ps1-wrapper" id="main-ui">
+        <img src="PSXPLAYER.png" class="background" alt="PSX UI">
+
+        <div id="track-slots-container"></div>
+
+        <div class="timer-container">
+            <span id="track-display"></span>
+            <span id="min-display">0</span>:
+            <span id="sec-display">00</span>
+        </div>
+
+        <div id="btn-viz-toggle" class="hitbox circle" style="left: 832px; top: 237px; width: 28px; height: 28px;"></div>
+        <div id="btn-next"  class="hitbox circle" style="left: 325px; top: 73px;"></div>
+        <div id="btn-play"  class="hitbox circle" style="left: 325px; top: 347px;"></div>
+        <div id="btn-stop"  class="hitbox circle" style="left: 325px; top: 485px;"></div>
+        <div id="btn-open-bios" class="hitbox circle" style="left: 1522px; top: 700px;" title="Load BIOS"></div>
+
+        <input type="file" id="bios-selector" style="display:none;">
+        <input type="file" id="audio-selector" accept="audio/mp3" multiple style="display:none;">
+    </div>
+
+    <div id="visualizer-overlay" class="hidden">
+        <canvas id="viz-canvas"></canvas>
+        <div id="btn-exit-viz">Back to Player</div>
+    </div>
+
+    <audio id="audio-engine"></audio>
+
+    <script src="emulator-core/wasmpsx.min.js"></script>
+    <script src="player.js"></script>
+</body>
+</html>
