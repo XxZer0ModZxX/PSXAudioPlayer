@@ -59,7 +59,7 @@ async function loadMusicFromGitHub(trackName) {
 
 // Trigger Music Fetch on 'Load Music' button click
 btnLoadSong.onclick = () => {
-    // Change 'track1.mp3' to match your uploaded file name!
+    // Change 'Track01.mp3' to match your uploaded file name!
     loadMusicFromGitHub('Track01.mp3'); 
 };
 
