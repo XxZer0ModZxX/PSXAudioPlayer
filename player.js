@@ -1,6 +1,7 @@
 // Elements
+const startOverlay = document.getElementById('start-overlay');
 const btnOpenBios = document.getElementById('btn-open-bios');
-const btnLoadSong = document.getElementById('btn-open'); // Map to the 'Load Music' hitbox
+const btnLoadSong = document.getElementById('btn-open');
 const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const btnNext = document.getElementById('btn-next');
@@ -8,111 +9,86 @@ const mainUI = document.getElementById('main-ui');
 const vizOverlay = document.getElementById('visualizer-overlay');
 const audioEngine = document.getElementById('audio-engine');
 
+// NEW: Unlock Audio on First Click
+startOverlay.onclick = () => {
+    // This empty play/pause "wakes up" the browser audio engine
+    audioEngine.play().then(() => {
+        audioEngine.pause();
+        audioEngine.currentTime = 0;
+    }).catch(e => console.log("Wake up blocked, but context is opening."));
+    
+    startOverlay.classList.add('hidden');
+    console.log("Audio Unlocked");
+};
+
 /**
  * AUTO-LOAD BIOS LOGIC
  */
 async function loadBiosFromGitHub() {
     const biosPath = './bios/SCPH7501.BIN'; 
-    console.log("Fetching BIOS from GitHub...");
-    
     try {
         const response = await fetch(biosPath);
-        if (!response.ok) throw new Error(`Server responded with ${response.status}: BIOS not found.`);
-
+        if (!response.ok) throw new Error("BIOS not found.");
         const biosBuffer = await response.arrayBuffer();
-        console.log("BIOS downloaded. Initializing Emulator Core...");
-        
         await startPS1Bios(biosBuffer); 
-        console.log("PS1 BIOS is now running!");
-        alert("BIOS Loaded Successfully!");
+        alert("BIOS Loaded!");
     } catch (err) {
-        console.error("Critical Error loading BIOS:", err);
-        alert("Failed to load BIOS. Ensure /bios/SCPH7501.BIN exists on GitHub.");
+        alert("BIOS Error: Check GitHub file names.");
     }
 }
 
 /**
  * FETCH MUSIC FROM GITHUB
- * PS5 blocks USB/Local selection, so we fetch from your repo.
  */
 async function loadMusicFromGitHub(trackName) {
     const musicPath = `./music/${trackName}`; 
-    console.log("Attempting to fetch: " + musicPath);
-    
-    // Debug Alert 1
     alert("Loading: " + trackName);
 
     try {
         const response = await fetch(musicPath);
-        
         if (!response.ok) {
-            alert("Error 404: File not found on GitHub. Check case sensitivity!");
+            alert("Error 404: Check file name in /music/");
             return;
         }
 
         const blob = await response.blob();
-        const fileURL = URL.createObjectURL(blob);
+        audioEngine.src = URL.createObjectURL(blob);
         
-        audioEngine.src = fileURL;
-        
-        // Console interaction requirement: try to play
         audioEngine.play().then(() => {
-            alert("Playback started!");
+            console.log("Playback started!");
         }).catch(e => {
-            alert("Playback blocked. Click the screen once then try again.");
-            console.error(e);
+            alert("Still blocked! Click the background first.");
         });
 
-        // Feed the audio to the emulator core for the visualizer
         if (typeof syncAudioToEmulator === "function") {
             syncAudioToEmulator(audioEngine);
         }
         
     } catch (err) {
-        console.error("Error loading music:", err);
         alert("Network Error: " + err.message);
     }
 }
 
-// 1. Trigger Music Fetch on 'Load Music' button click
-btnLoadSong.onclick = () => {
-    loadMusicFromGitHub('Track01.mp3'); 
-};
+btnLoadSong.onclick = () => loadMusicFromGitHub('Track01.mp3');
+btnOpenBios.onclick = () => loadBiosFromGitHub();
 
-// 2. Trigger BIOS on 'Open' button click
-btnOpenBios.onclick = () => {
-    loadBiosFromGitHub();
-};
-
-// 3. Play Button Logic
 btnPlay.onclick = () => {
-    if (audioEngine.src) {
-        audioEngine.play();
-    } else {
-        alert("No song loaded! Click the Load Music button first.");
-    }
+    if (audioEngine.src) audioEngine.play();
+    else alert("Load music first!");
 };
 
-// 4. Stop Button Logic
 btnStop.onclick = () => {
     audioEngine.pause();
     audioEngine.currentTime = 0;
 };
 
-// 5. Next Button Logic (For now, reloads the same track as a test)
-btnNext.onclick = () => {
-    loadMusicFromGitHub('Track01.mp3');
-};
+btnNext.onclick = () => loadMusicFromGitHub('Track01.mp3');
 
-// Visualizer Toggle Logic
 document.getElementById('btn-viz-toggle').onclick = () => {
     mainUI.classList.add('hidden');
     vizOverlay.classList.remove('hidden');
     vizOverlay.classList.add('visible');
-    
-    if (typeof resizeCanvas === "function") {
-        resizeCanvas();
-    }
+    if (typeof resizeCanvas === "function") resizeCanvas();
 };
 
 document.getElementById('btn-exit-viz').onclick = () => {
