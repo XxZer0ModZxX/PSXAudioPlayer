@@ -1,101 +1,54 @@
 body {
-    margin: 0;
-    padding: 0;
-    background-color: #000;
-    color: #fff;
-    font-family: sans-serif;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
+    margin: 0; padding: 0;
+    background-color: #000; color: #fff;
+    font-family: sans-serif; overflow: hidden;
+    display: flex; justify-content: center; align-items: center;
+    width: 100vw; height: 100vh;
 }
 
-/* Interaction Overlay Styles */
 #start-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999; /* On top of everything */
-    cursor: pointer;
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000; display: flex;
+    justify-content: center; align-items: center;
+    z-index: 999; cursor: pointer;
 }
 
 #start-button {
-    padding: 20px 40px;
-    border: 2px solid #00ff00;
-    color: #00ff00;
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 24px;
+    padding: 20px 40px; border: 2px solid #00ff00;
+    color: #00ff00; font-weight: bold; font-size: 24px;
 }
 
-.ps1-wrapper {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+.ps1-wrapper { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
 
 .scaling-container {
-    position: relative;
-    width: 100vw;
-    height: 56.25vw; 
-    max-height: 100vh;
-    max-width: 177.78vh;
+    position: relative; width: 100vw; height: 56.25vw; 
+    max-height: 100vh; max-width: 177.78vh;
 }
 
-.background {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    object-fit: contain;
-    z-index: 1;
-}
+.background { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; }
 
 .hitbox {
-    position: absolute;
-    cursor: pointer;
+    position: absolute; cursor: pointer;
     background: rgba(255, 0, 255, 0.4); 
     border: 1px solid rgba(255, 255, 255, 0.5);
-    z-index: 10;
-    width: 3.2%; 
-    height: 5.8%;
-    transition: background 0.2s, transform 0.1s;
+    z-index: 10; width: 3.2%; height: 5.8%;
 }
 
-.hitbox:active { background: rgba(255, 255, 255, 0.8); transform: scale(0.9); }
 .circle { border-radius: 50%; }
 
 .timer-container {
-    position: absolute;
-    z-index: 5;
-    color: #00ff00;
-    font-size: 2.5vw;
-    font-family: monospace;
-    text-shadow: 2px 2px #000;
+    position: absolute; z-index: 5; color: #00ff00;
+    font-size: 2.5vw; font-family: monospace; text-shadow: 2px 2px #000;
 }
 
 .hidden { display: none !important; }
 .visible { display: block !important; }
 
 #visualizer-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: #000;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #000; z-index: 100; display: flex;
+    flex-direction: column; justify-content: center; align-items: center;
 }
 
 #viz-canvas { width: 100%; height: 90%; }
