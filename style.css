@@ -22,12 +22,10 @@ body {
 
 .scaling-container {
     position: relative;
-    /* This forces the container to keep a 16:9 widescreen shape */
     width: 100vw;
     height: 56.25vw; 
     max-height: 100vh;
     max-width: 177.78vh;
-    background: #111;
 }
 
 .background {
@@ -43,13 +41,22 @@ body {
 .hitbox {
     position: absolute;
     cursor: pointer;
-    /* KEEP PINK TO ALIGN - Change to rgba(0,0,0,0) when done! */
-    background: rgba(255, 0, 255, 0.4); 
+    background: rgba(255, 0, 255, 0.4); /* Pink for alignment */
     border: 1px solid rgba(255, 255, 255, 0.5);
     z-index: 10;
-    /* Size is now percentage-based so buttons scale with the UI */
     width: 3.2%; 
     height: 5.8%;
+    transition: background 0.2s, transform 0.1s;
+}
+
+/* Button Feedback */
+.hitbox:hover {
+    background: rgba(255, 0, 255, 0.6);
+}
+
+.hitbox:active {
+    background: rgba(255, 255, 255, 0.8); /* Flash white when clicked */
+    transform: scale(0.9); /* Small "press" effect */
 }
 
 .circle { border-radius: 50%; }
@@ -58,12 +65,11 @@ body {
     position: absolute;
     z-index: 5;
     color: #00ff00;
-    font-size: 2.5vw; /* Text scales with screen size */
+    font-size: 2.5vw;
     font-family: monospace;
     text-shadow: 2px 2px #000;
 }
 
-/* Transitions */
 .hidden { display: none !important; }
 .visible { display: block !important; }
 
@@ -87,8 +93,11 @@ body {
 }
 
 #btn-exit-viz {
+    margin-top: 10px;
     padding: 10px 20px;
     background: #444;
+    color: white;
     cursor: pointer;
     border: 2px solid #fff;
+    font-weight: bold;
 }
