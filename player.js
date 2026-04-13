@@ -10,48 +10,58 @@ const mainUI = document.getElementById('main-ui');
 const vizOverlay = document.getElementById('visualizer-overlay');
 const audioEngine = document.getElementById('audio-engine');
 
-// 1. Initial Unlock
+// Use your verified GitHub URL
+const GITHUB_BASE = "https://xxzer0modzxx.github.io/PSXAudioPlayer/music/";
+
+/**
+ * 1. THE PS5 HANDSHAKE
+ * Clicking the 'Power On' screen now pre-loads the audio engine
+ */
 startOverlay.onclick = () => {
-    audioEngine.play().catch(() => {}); 
-    startOverlay.style.display = 'none';
+    audioEngine.src = GITHUB_BASE + "Track01.mp3";
+    audioEngine.load(); 
+    
+    // Attempt a silent play/pause to unlock the system
+    audioEngine.play().then(() => {
+        audioEngine.pause();
+        startOverlay.style.display = 'none';
+        console.log("PS5 Audio Unlocked");
+    }).catch(() => {
+        // If it blocks, we still hide overlay and wait for button click
+        startOverlay.style.display = 'none';
+    });
 };
 
 /**
- * ABSOLUTE PATH PLAYBACK
+ * 2. PLAYBACK LOGIC
  */
 function playTrack(trackName) {
-    // CHANGE 'YOURUSERNAME' TO YOUR ACTUAL GITHUB NAME BELOW
-    const username = "YOURUSERNAME"; 
-    const repo = "PSXAudioPlayer";
-    const musicUrl = "https://" + username + ".github.io/" + repo + "/music/" + trackName;
+    const musicUrl = GITHUB_BASE + trackName;
     
-    alert("Target URL: " + musicUrl);
-
-    audioEngine.pause();
+    // Update source
     audioEngine.src = musicUrl;
-    audioEngine.load(); 
+    audioEngine.load();
 
-    // We wait a split second for the browser to "catch" the file
+    // The PS5 needs a moment to buffer the header
     setTimeout(() => {
         audioEngine.play()
-            .then(() => { alert("Success! Playing now."); })
+            .then(() => { console.log("Success"); })
             .catch(error => {
-                alert("File loaded but blocked. Press the pink PLAY button now.");
+                alert("File Ready! Now click the pink PLAY button on the player.");
             });
-    }, 500);
+    }, 300);
 }
 
 // Button Assignments
 btnLoadSong.onclick = () => {
-    // Double check: Is it Track01.mp3 or track1.mp3 on your GitHub?
     playTrack('Track01.mp3'); 
 };
 
 btnPlay.onclick = () => {
     if (audioEngine.src && audioEngine.src !== "") {
-        audioEngine.play().catch(e => alert("System still blocking audio. Tap center of screen."));
+        audioEngine.play().catch(e => alert("Blocked! Tap the middle of the screen then Play again."));
     } else {
-        alert("Audio Engine is empty. Click 'Load Music' again.");
+        alert("Audio Engine empty. Click 'Load Music' first.");
     }
 };
 
@@ -83,6 +93,7 @@ async function loadBiosFromGitHub() {
 
 btnOpenBios.onclick = () => loadBiosFromGitHub();
 
+// UI Toggles
 document.getElementById('btn-viz-toggle').onclick = () => {
     mainUI.classList.add('hidden');
     vizOverlay.classList.remove('hidden');
