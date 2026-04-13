@@ -1,4 +1,3 @@
-// Elements
 const startOverlay = document.getElementById('start-overlay');
 const btnOpenBios = document.getElementById('btn-open-bios');
 const btnLoadSong = document.getElementById('btn-open');
@@ -9,56 +8,45 @@ const mainUI = document.getElementById('main-ui');
 const vizOverlay = document.getElementById('visualizer-overlay');
 const audioEngine = document.getElementById('audio-engine');
 
-// Unlock Audio and "Prime" the player
+// 1. Initial Unlock
 startOverlay.onclick = () => {
-    // We play a silent 1-second burst to "force" the browser to allow audio
-    audioEngine.src = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg"; 
-    audioEngine.play().then(() => {
-        audioEngine.pause();
-        startOverlay.classList.add('hidden');
-        console.log("Audio Engine Authenticated");
-    }).catch(err => {
-        // If even this fails, we show the player anyway
-        startOverlay.classList.add('hidden');
-    });
+    // Prime the engine with a tiny bit of silence or low-level data
+    audioEngine.play().catch(() => {}); 
+    audioEngine.pause();
+    startOverlay.classList.add('hidden');
+    console.log("Audio Context Started");
 };
 
 /**
- * FETCH MUSIC FROM GITHUB
+ * DIRECT PLAYBACK LOGIC
  */
-async function loadMusicFromGitHub(trackName) {
-    const musicPath = `./music/${trackName}`; 
+function playTrack(trackName) {
+    const musicPath = `./music/${trackName}`;
     
-    // 1. Immediate Action: Set the source and call play() right now
-    // This is the "Direct" way consoles prefer
+    // Setting src and play() in the same tick as the button click
     audioEngine.src = musicPath;
+    audioEngine.load(); // Force the browser to start loading
     
-    try {
-        console.log("Requesting: " + musicPath);
-        await audioEngine.play();
-        alert("Playing: " + trackName);
-        
-        // Feed the audio to the emulator core for the visualizer
-        if (typeof syncAudioToEmulator === "function") {
-            syncAudioToEmulator(audioEngine);
-        }
-    } catch (err) {
-        console.error("Playback failed:", err);
-        alert("PS5 Blocked Audio. Try this: Press 'Play' after this message closes.");
+    const playPromise = audioEngine.play();
+
+    if (playPromise !== undefined) {
+        playPromise.then(() => {
+            console.log("Playback success");
+            if (typeof syncAudioToEmulator === "function") {
+                syncAudioToEmulator(audioEngine);
+            }
+        }).catch(error => {
+            console.log("Playback failed. User must click Play again.");
+            // If it fails, the user now has to click the 'Play' hitbox
+        });
     }
 }
 
 // Button Assignments
-btnLoadSong.onclick = () => {
-    loadMusicFromGitHub('Track01.mp3'); 
-};
-
-btnOpenBios.onclick = () => {
-    loadBiosFromGitHub();
-};
+btnLoadSong.onclick = () => playTrack('Track01.mp3');
 
 btnPlay.onclick = () => {
-    audioEngine.play().catch(e => alert("Click the screen first!"));
+    audioEngine.play().catch(e => console.log("Still blocked"));
 };
 
 btnStop.onclick = () => {
@@ -66,27 +54,25 @@ btnStop.onclick = () => {
     audioEngine.currentTime = 0;
 };
 
-btnNext.onclick = () => {
-    loadMusicFromGitHub('Track01.mp3');
-};
+btnNext.onclick = () => playTrack('Track01.mp3');
 
 /**
  * BIOS LOGIC
  */
 async function loadBiosFromGitHub() {
-    const biosPath = './bios/SCPH7501.BIN'; 
     try {
-        const response = await fetch(biosPath);
-        if (!response.ok) throw new Error("BIOS not found.");
+        const response = await fetch('./bios/SCPH7501.BIN');
+        if (!response.ok) throw new Error();
         const biosBuffer = await response.arrayBuffer();
-        await startPS1Bios(biosBuffer); 
-        alert("BIOS Loaded!");
+        await startPS1Bios(biosBuffer);
     } catch (err) {
-        alert("BIOS Error: Ensure file is in /bios/ folder on GitHub.");
+        console.log("BIOS load failed");
     }
 }
 
-// UI Toggles
+btnOpenBios.onclick = () => loadBiosFromGitHub();
+
+// Visualizer Toggles
 document.getElementById('btn-viz-toggle').onclick = () => {
     mainUI.classList.add('hidden');
     vizOverlay.classList.remove('hidden');
