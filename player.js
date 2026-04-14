@@ -1,3 +1,4 @@
+// Variable Declarations
 const startOverlay = document.getElementById('start-overlay');
 const btnOpenBios = document.getElementById('btn-open-bios');
 const btnLoadSong = document.getElementById('btn-open');
@@ -5,7 +6,6 @@ const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
 
-// File must be in the root folder
 const TRACK_FILE = "Track01.mp3"; 
 
 let audioCtx = null;
@@ -16,76 +16,80 @@ let pausedAt = 0;
 let isPlaying = false;
 
 /**
- * 1. THE POWER ON (Initialize the Audio System)
+ * 1. POWER ON HANDSHAKE
  */
-startOverlay.onclick = () => {
-    // Create the Audio Context - This is what YouTube uses
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    audioCtx = new AudioContext();
-    
-    // Wake up the context immediately
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-    
-    startOverlay.style.display = 'none';
-};
+if (startOverlay) {
+    startOverlay.onclick = function() {
+        try {
+            // Initialize Web Audio
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            
+            // Hide overlay
+            startOverlay.style.display = 'none';
+            console.log("PSX Powered On");
+        } catch (e) {
+            alert("Web Audio not supported on this browser.");
+        }
+    };
+}
 
 /**
- * 2. THE LOAD BUTTON (Download raw data into RAM)
+ * 2. LOAD MUSIC
  */
-btnLoadSong.onclick = async () => {
+btnLoadSong.onclick = async function() {
+    if (!audioCtx) return;
     btnLoadSong.style.backgroundColor = "white";
     
     try {
-        // Download the file as raw data (ArrayBuffer)
         const response = await fetch(TRACK_FILE + "?v=" + Date.now());
         const arrayBuffer = await response.arrayBuffer();
         
-        // Decode the MP3 data into a playable buffer
-        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-        
-        btnLoadSong.style.backgroundColor = "yellow";
-        console.log("Audio Decoded and Ready");
+        // Decode raw data
+        audioCtx.decodeAudioData(arrayBuffer, function(buffer) {
+            audioBuffer = buffer;
+            btnLoadSong.style.backgroundColor = "yellow";
+            console.log("CD Ready");
+        }, function(err) {
+            btnLoadSong.style.backgroundColor = "red";
+        });
     } catch (e) {
         btnLoadSong.style.backgroundColor = "red";
-        console.error("Decode failed", e);
     }
 };
 
 /**
- * 3. THE PLAY BUTTON (The Direct Stream)
+ * 3. PLAY LOGIC
  */
-btnPlay.onclick = () => {
+btnPlay.onclick = function() {
     if (!audioBuffer || isPlaying) return;
 
-    // Ensure context is active (PS5 requirement)
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
 
-    // WebAudio requires a new source for every play
     sourceNode = audioCtx.createBufferSource();
     sourceNode.buffer = audioBuffer;
     sourceNode.connect(audioCtx.destination);
     
-    // Handle the start point (for resume/pause logic)
     sourceNode.start(0, pausedAt);
     startTime = audioCtx.currentTime - pausedAt;
     isPlaying = true;
     
     btnLoadSong.style.backgroundColor = "green";
     
-    sourceNode.onended = () => {
-        isPlaying = false;
-        btnLoadSong.style.backgroundColor = "yellow";
+    sourceNode.onended = function() {
+        if (isPlaying) {
+            isPlaying = false;
+            btnLoadSong.style.backgroundColor = "yellow";
+        }
     };
 };
 
 /**
  * 4. STOP & PAUSE
  */
-btnStop.onclick = () => {
+btnStop.onclick = function() {
     if (sourceNode) {
         sourceNode.stop();
         isPlaying = false;
@@ -94,7 +98,7 @@ btnStop.onclick = () => {
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
-btnPause.onclick = () => {
+btnPause.onclick = function() {
     if (sourceNode && isPlaying) {
         sourceNode.stop();
         pausedAt = audioCtx.currentTime - startTime;
@@ -103,24 +107,22 @@ btnPause.onclick = () => {
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
-/**
- * BIOS AND UI
- */
-btnOpenBios.onclick = async () => {
+// BIOS and UI Logic
+btnOpenBios.onclick = async function() {
     try {
         const response = await fetch('./bios/SCPH7501.BIN');
-        const biosBuffer = await response.arrayBuffer();
-        if (typeof startPS1Bios === "function") await startPS1Bios(biosBuffer);
-    } catch (err) {}
+        const buffer = await response.arrayBuffer();
+        if (typeof startPS1Bios === "function") await startPS1Bios(buffer);
+    } catch (e) {}
 };
 
-document.getElementById('btn-viz-toggle').onclick = () => {
+document.getElementById('btn-viz-toggle').onclick = function() {
     document.getElementById('main-ui').classList.add('hidden');
     document.getElementById('visualizer-overlay').classList.remove('hidden');
     document.getElementById('visualizer-overlay').classList.add('visible');
 };
 
-document.getElementById('btn-exit-viz').onclick = () => {
+document.getElementById('btn-exit-viz').onclick = function() {
     document.getElementById('visualizer-overlay').classList.remove('visible');
     document.getElementById('visualizer-overlay').classList.add('hidden');
     document.getElementById('main-ui').classList.remove('hidden');
