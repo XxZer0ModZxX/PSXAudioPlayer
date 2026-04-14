@@ -4,48 +4,66 @@ const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const audioEngine = document.getElementById('audio-engine');
 
-// Direct relative path
-const TRACK_PATH = "./music/Track01.mp3";
+// We use the root file. 
+const TRACK_FILE = "Track01.mp3";
 
-// 1. UNLOCK THE AUDIO CONTEXT
+// 1. THE PS5 UNLOCKER
 startOverlay.onclick = () => {
-    // Basic "wake up" for the browser
+    // Force the hardware audio context to start
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+        const context = new AudioContext();
+        if (context.state === 'suspended') context.resume();
+    }
+    
+    // Play a silent handshake
+    audioEngine.src = "data:audio/wav;base64,UklGRiQAAABXQVZFRm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=";
     audioEngine.play().catch(() => {});
+    
     startOverlay.style.display = 'none';
 };
 
 /**
- * 2. LOAD MUSIC
- * We set the source directly. No fetching, no blobs.
+ * 2. LOAD & AUTO-PLAY
  */
-btnLoadSong.onclick = () => {
-    // Set the source directly to the file path
-    audioEngine.src = TRACK_PATH;
-    audioEngine.load(); 
+btnLoadSong.onclick = async () => {
+    // Visual feedback: White = Working
+    btnLoadSong.style.backgroundColor = "white"; 
     
-    // Give the UI some feedback
-    btnLoadSong.style.border = "2px solid white";
-    
-    // Try to play immediately
-    audioEngine.play().then(() => {
-        btnLoadSong.style.backgroundColor = "rgba(0, 255, 0, 0.5)";
-    }).catch(e => {
-        // If it's blocked, we wait for the Play button
-        btnLoadSong.style.backgroundColor = "rgba(255, 255, 0, 0.5)";
-    });
+    try {
+        // We add a timestamp to the end of the URL to bypass GitHub's cache
+        // This forces the PS5 to get the NEWEST version of the file
+        const antiCacheUrl = TRACK_FILE + "?v=" + Date.now();
+        
+        audioEngine.src = antiCacheUrl;
+        audioEngine.load();
+        
+        // Wait a tiny bit for the header to load
+        setTimeout(async () => {
+            try {
+                await audioEngine.play();
+                btnLoadSong.style.backgroundColor = "green";
+            } catch (playErr) {
+                // If auto-play fails, yellow means "Loaded, but waiting for you to hit PLAY"
+                btnLoadSong.style.backgroundColor = "yellow";
+            }
+        }, 500);
+
+    } catch (e) {
+        btnLoadSong.style.backgroundColor = "red";
+    }
 };
 
 /**
- * 3. PLAY BUTTON
+ * 3. THE PLAY BUTTON
  */
 btnPlay.onclick = () => {
-    if (audioEngine.src) {
-        audioEngine.play().catch(e => {
-            // Final attempt: Toggle mute to bypass policy
-            audioEngine.muted = false;
-            audioEngine.play();
-        });
-    }
+    // If the song is loaded (Green or Yellow), force it to play
+    audioEngine.play().catch(() => {
+        // PS5 specific: Try to unmute and play if it's still being stubborn
+        audioEngine.muted = false;
+        audioEngine.play();
+    });
 };
 
 btnStop.onclick = () => {
@@ -53,7 +71,7 @@ btnStop.onclick = () => {
     audioEngine.currentTime = 0;
 };
 
-// BIOS & UI Logic
+// BIOS & UI Toggle Logic (Stays the same)
 document.getElementById('btn-open-bios').onclick = async () => {
     try {
         const res = await fetch('./bios/SCPH7501.BIN');
