@@ -19,16 +19,15 @@ startOverlay.onclick = function() {
 btnLoadSong.onclick = function() {
     btnLoadSong.style.backgroundColor = "white";
     
-    // THE CHANGE: Tell the PS5 this is a stream, not a file
-    audioEngine.crossOrigin = "anonymous"; 
-    audioEngine.setAttribute("type", "audio/mpeg"); 
-    
+    // Set source and FORCE MUTED (The handshake that worked for you)
     audioEngine.muted = true;
     audioEngine.src = TRACK_FILE + "?v=" + Date.now();
     audioEngine.load();
     
+    // Attempt silent playback immediately
     audioEngine.play().then(function() {
         btnLoadSong.style.backgroundColor = "yellow";
+        console.log("Playing Silently...");
     }).catch(function() {
         btnLoadSong.style.backgroundColor = "yellow";
     });
