@@ -5,11 +5,12 @@ const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
 const audioEngine = document.getElementById('audio-engine');
 
-// UPDATED PATH: Includes the 'music/' folder
+// Change this name if you test Track01.wav, Track01.m4a, etc.
 const TRACK_FILE = "Track01.mp3"; 
 
 // 1. POWER ON HANDSHAKE
 startOverlay.onclick = function() {
+    // Basic interaction to tell the browser we're active
     audioEngine.play().catch(function(){});
     startOverlay.style.display = 'none';
 };
@@ -18,11 +19,12 @@ startOverlay.onclick = function() {
 btnLoadSong.onclick = function() {
     btnLoadSong.style.backgroundColor = "white";
     
-    // Set source and FORCE MUTED (This is what worked for you)
+    // Set source and FORCE MUTED (The handshake that worked for you)
     audioEngine.muted = true;
     audioEngine.src = TRACK_FILE + "?v=" + Date.now();
     audioEngine.load();
     
+    // Attempt silent playback immediately
     audioEngine.play().then(function() {
         btnLoadSong.style.backgroundColor = "yellow";
         console.log("Playing Silently...");
@@ -41,9 +43,9 @@ btnPlay.onclick = function() {
 
     if (playPromise !== undefined) {
         playPromise.then(function() {
-            // SUCCESS STATE
+            // SUCCESS STATE - TURN GREEN
             btnLoadSong.style.backgroundColor = "green";
-            // Extra nudge to force hardware audio routing
+            // Nudge to force audio routing
             audioEngine.volume = 0.99;
             setTimeout(() => { audioEngine.volume = 1.0; }, 100);
         }).catch(function() {
@@ -69,7 +71,7 @@ btnPause.onclick = function() {
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
-// BIOS & UI Toggle Logic (Standard)
+// BIOS & UI Toggle Logic
 document.getElementById('btn-open-bios').onclick = function() {
     fetch('./bios/SCPH7501.BIN').then(function(res) {
         return res.arrayBuffer();
