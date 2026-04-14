@@ -4,99 +4,81 @@ const btnLoadSong = document.getElementById('btn-open');
 const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
-const btnNext = document.getElementById('btn-next');
-const btnFF = document.getElementById('btn-ff');
-const btnRW = document.getElementById('btn-rw');
-const btnPrev = document.getElementById('btn-prev');
-const mainUI = document.getElementById('main-ui');
-const vizOverlay = document.getElementById('visualizer-overlay');
 const audioEngine = document.getElementById('audio-engine');
 
-// File is in the root folder
 const TRACK_FILE = "Track01.mp3"; 
-let isLoaded = false;
 
 /**
- * 1. THE POWER ON HANDSHAKE
+ * 1. THE POWER ON & PRE-LOAD
+ * We start the download IMMEDIATELY here.
  */
 startOverlay.onclick = () => {
-    // We play a silent buffer to tell the PS5 hardware we are using the speakers
-    audioEngine.src = "data:audio/wav;base64,UklGRiQAAABXQVZFRm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=";
-    audioEngine.play().catch(() => {});
+    // 1. Force hardware wake-up
+    audioEngine.src = TRACK_FILE; 
+    audioEngine.load(); 
+    
+    // 2. Start a silent play to "prime" the speakers
+    audioEngine.play().then(() => {
+        // If it plays immediately (rare), just pause it and wait
+        audioEngine.pause();
+    }).catch(() => {
+        // This is expected on PS5
+        console.log("Engine Primed");
+    });
+
     startOverlay.style.display = 'none';
 };
 
 /**
- * 2. THE LOAD FUNCTION
+ * 2. THE LOAD BUTTON (The "Unlocker")
  */
-btnLoadSong.onclick = async () => {
-    // If it's already yellow, clicking it again acts as a Play button
-    if (isLoaded) {
-        forcePlay();
-        return;
-    }
-
-    btnLoadSong.style.backgroundColor = "white"; 
+btnLoadSong.onclick = () => {
+    // Visual feedback
+    btnLoadSong.style.backgroundColor = "white";
     
-    try {
-        // Use a timestamp to prevent the PS5 from using an old cached version
-        const antiCacheUrl = TRACK_FILE + "?v=" + Date.now();
-        audioEngine.src = antiCacheUrl;
-        audioEngine.load();
-        
-        // Auto-Play attempt
-        audioEngine.play().then(() => {
-            btnLoadSong.style.backgroundColor = "green";
-            isLoaded = true;
-        }).catch(() => {
-            // This is where the PS5 usually ends up (Yellow)
-            btnLoadSong.style.backgroundColor = "yellow";
-            isLoaded = true;
-        });
-
-    } catch (e) {
-        btnLoadSong.style.backgroundColor = "red";
-    }
+    // Try to play the pre-loaded file
+    audioEngine.play().then(() => {
+        btnLoadSong.style.backgroundColor = "green";
+    }).catch(() => {
+        // If it still blocks, we stay yellow and wait for the Play button
+        btnLoadSong.style.backgroundColor = "yellow";
+    });
 };
 
 /**
- * 3. THE FORCE PLAY LOGIC
+ * 3. THE PLAY BUTTON (The "Hammer")
+ * We use a loop here. It will try to play every 100ms 
+ * for 1 second to catch the PS5 "trust window."
  */
-function forcePlay() {
-    audioEngine.muted = false;
-    audioEngine.volume = 1.0;
-    audioEngine.play().then(() => {
-        btnLoadSong.style.backgroundColor = "green";
-    }).catch(err => {
-        console.log("Still blocked");
-    });
-}
+btnPlay.onclick = () => {
+    let attempts = 0;
+    const interval = setInterval(() => {
+        audioEngine.muted = false;
+        audioEngine.volume = 1.0;
+        
+        audioEngine.play().then(() => {
+            btnLoadSong.style.backgroundColor = "green";
+            clearInterval(interval);
+        }).catch(() => {
+            attempts++;
+            if (attempts > 10) clearInterval(interval);
+        });
+    }, 100);
+};
 
-// Play button specific action
-btnPlay.onclick = () => forcePlay();
-
-// Other Controls
 btnStop.onclick = () => {
     audioEngine.pause();
     audioEngine.currentTime = 0;
-    if(isLoaded) btnLoadSong.style.backgroundColor = "yellow";
+    btnLoadSong.style.backgroundColor = "yellow";
 };
 
 btnPause.onclick = () => {
     audioEngine.pause();
-    if(isLoaded) btnLoadSong.style.backgroundColor = "yellow";
+    btnLoadSong.style.backgroundColor = "yellow";
 };
 
 /**
- * EXTRA BUTTONS
- */
-btnNext.onclick = () => { btnLoadSong.click(); };
-btnPrev.onclick = () => { btnLoadSong.click(); };
-btnFF.onclick = () => { audioEngine.currentTime += 10; };
-btnRW.onclick = () => { audioEngine.currentTime -= 10; };
-
-/**
- * BIOS AND VIZ
+ * BIOS AND UI
  */
 btnOpenBios.onclick = async () => {
     try {
@@ -107,13 +89,11 @@ btnOpenBios.onclick = async () => {
 };
 
 document.getElementById('btn-viz-toggle').onclick = () => {
-    mainUI.classList.add('hidden');
-    vizOverlay.classList.remove('hidden');
-    vizOverlay.classList.add('visible');
+    document.getElementById('main-ui').classList.add('hidden');
+    document.getElementById('visualizer-overlay').style.display = 'flex';
 };
 
 document.getElementById('btn-exit-viz').onclick = () => {
-    vizOverlay.classList.remove('visible');
-    vizOverlay.classList.add('hidden');
-    mainUI.classList.remove('hidden');
+    document.getElementById('visualizer-overlay').style.display = 'none';
+    document.getElementById('main-ui').classList.remove('hidden');
 };
