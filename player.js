@@ -8,11 +8,22 @@ const audioEngine = document.getElementById('audio-engine');
 // Change this name if you test Track01.wav, Track01.m4a, etc.
 const TRACK_FILE = "Track01.,mp3"; 
 
-// 1. POWER ON HANDSHAKE
+// 1. POWER ON HANDSHAKE (The "YouTube" Method)
 startOverlay.onclick = function() {
-    // Basic interaction to tell the browser we're active
+    // We "kick" the engine with a tiny bit of data to grab the hardware
     audioEngine.play().catch(function(){});
-    startOverlay.style.display = 'none';
+    
+    // Attempt to "Mute" the system background music by claiming the audio focus
+    audioEngine.src = TRACK_FILE;
+    audioEngine.muted = false;
+    audioEngine.volume = 0.01; // Play at 1% volume immediately to steal focus
+    
+    audioEngine.play().then(() => {
+        console.log("System music should have stopped now.");
+        startOverlay.style.display = 'none';
+    }).catch(() => {
+        startOverlay.style.display = 'none';
+    });
 };
 
 // 2. LOAD MUSIC
