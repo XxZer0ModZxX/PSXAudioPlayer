@@ -4,19 +4,19 @@ const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const audioEngine = document.getElementById('audio-engine');
 
-// We are moving the file to the ROOT to bypass folder security
+// We use the root file. 
 const TRACK_FILE = "Track01.mp3";
 
-// 1. THE ULTIMATE UNLOCK
+// 1. THE PS5 UNLOCKER
 startOverlay.onclick = () => {
-    // Create a dummy audio context to "handshake" with the PS5 hardware
+    // Force the hardware audio context to start
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (AudioContext) {
         const context = new AudioContext();
-        context.resume();
+        if (context.state === 'suspended') context.resume();
     }
     
-    // Play a tiny silent beep to wake the engine
+    // Play a silent handshake
     audioEngine.src = "data:audio/wav;base64,UklGRiQAAABXQVZFRm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=";
     audioEngine.play().catch(() => {});
     
@@ -27,32 +27,41 @@ startOverlay.onclick = () => {
  * 2. LOAD & AUTO-PLAY
  */
 btnLoadSong.onclick = async () => {
-    btnLoadSong.style.backgroundColor = "blue"; // Blue = "Trying to bypass security"
+    // Visual feedback: White = Working
+    btnLoadSong.style.backgroundColor = "white"; 
     
     try {
-        // We set the source to the root file
-        audioEngine.src = TRACK_FILE;
+        // We add a timestamp to the end of the URL to bypass GitHub's cache
+        // This forces the PS5 to get the NEWEST version of the file
+        const antiCacheUrl = TRACK_FILE + "?v=" + Date.now();
+        
+        audioEngine.src = antiCacheUrl;
         audioEngine.load();
         
-        // On PS5, we must try to play immediately while the click is "hot"
-        await audioEngine.play();
-        
-        btnLoadSong.style.backgroundColor = "green";
+        // Wait a tiny bit for the header to load
+        setTimeout(async () => {
+            try {
+                await audioEngine.play();
+                btnLoadSong.style.backgroundColor = "green";
+            } catch (playErr) {
+                // If auto-play fails, yellow means "Loaded, but waiting for you to hit PLAY"
+                btnLoadSong.style.backgroundColor = "yellow";
+            }
+        }, 500);
+
     } catch (e) {
-        // If it's red now, the PS5 is literally blocking the MP3 format or the filename
         btnLoadSong.style.backgroundColor = "red";
-        console.log("Error: " + e.message);
     }
 };
 
 /**
- * 3. PLAY BUTTON (Manual Force)
+ * 3. THE PLAY BUTTON
  */
 btnPlay.onclick = () => {
-    audioEngine.muted = false;
+    // If the song is loaded (Green or Yellow), force it to play
     audioEngine.play().catch(() => {
-        // Triple-check the source if it fails
-        if(!audioEngine.src) audioEngine.src = TRACK_FILE;
+        // PS5 specific: Try to unmute and play if it's still being stubborn
+        audioEngine.muted = false;
         audioEngine.play();
     });
 };
@@ -62,7 +71,7 @@ btnStop.onclick = () => {
     audioEngine.currentTime = 0;
 };
 
-// BIOS & UI Logic
+// BIOS & UI Toggle Logic (Stays the same)
 document.getElementById('btn-open-bios').onclick = async () => {
     try {
         const res = await fetch('./bios/SCPH7501.BIN');
