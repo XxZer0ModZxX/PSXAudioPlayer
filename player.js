@@ -1,58 +1,72 @@
-alert("PSX Player Script: READY");
-
 const startOverlay = document.getElementById('start-overlay');
+const btnOpenBios = document.getElementById('btn-open-bios');
 const btnLoadSong = document.getElementById('btn-open');
 const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const audioEngine = document.getElementById('audio-engine');
 
-// Use your verified GitHub URL
 const GITHUB_BASE = "https://xxzer0modzxx.github.io/PSXAudioPlayer/music/";
-let queuedTrack = "Track01.mp3"; // Default song
+let currentTrack = "Track01.mp3";
 
-// 1. Initial Unlock
+// 1. THE UNLOCKER
 startOverlay.onclick = () => {
-    // We play a silent moment to tell PS5 the audio channel is ours
-    audioEngine.src = "data:audio/wav;base64,UklGRiQAAABXQVZFRm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=";
+    // Unmute and play whatever is there (currently nothing)
+    audioEngine.muted = false;
     audioEngine.play().catch(() => {});
     startOverlay.style.display = 'none';
 };
 
-/**
- * 2. LOAD MUSIC BUTTON
- * This just "prepares" the song name.
- */
+// 2. LOAD MUSIC (The Selector)
 btnLoadSong.onclick = () => {
-    queuedTrack = "Track01.mp3"; 
-    alert("Track Selected: " + queuedTrack + ". NOW PRESS THE PLAY BUTTON.");
+    // Just prepares the URL, doesn't play yet
+    currentTrack = "Track01.mp3";
+    console.log("Track Queued: " + currentTrack);
 };
 
-/**
- * 3. THE PLAY BUTTON (The "Master" Button)
- * On PS5, the click AND the .src change AND the .play() MUST happen here.
- */
+// 3. THE MASTER PLAY BUTTON
 btnPlay.onclick = () => {
-    const musicUrl = GITHUB_BASE + queuedTrack;
+    const targetUrl = GITHUB_BASE + currentTrack;
     
-    // If the engine isn't already playing this specific song
-    if (audioEngine.src !== musicUrl) {
-        audioEngine.src = musicUrl;
+    // Check if we need to change the source
+    if (audioEngine.src !== targetUrl) {
+        audioEngine.src = targetUrl;
         audioEngine.load();
     }
-
-    // Force playback immediately on the click event
+    
+    // Direct playback call - MUST happen inside the click event
     audioEngine.play().then(() => {
-        console.log("Success!");
+        console.log("Audio playing successfully");
     }).catch(e => {
-        // If it fails, we try a secondary "hard" play
-        setTimeout(() => { audioEngine.play(); }, 100);
-        alert("If no sound, tap the middle of the screen then hit Play again.");
+        // Fallback: If blocked, try to force it one more time
+        audioEngine.muted = false;
+        audioEngine.play();
     });
 };
 
 btnStop.onclick = () => {
     audioEngine.pause();
-    audioEngine.currentTime = 0;
 };
 
-// ... (Rest of your BIOS and Viz logic stays the same) ...
+/**
+ * BIOS AND VIZ LOGIC
+ */
+btnOpenBios.onclick = async () => {
+    try {
+        const response = await fetch('./bios/SCPH7501.BIN');
+        const biosBuffer = await response.arrayBuffer();
+        if (typeof startPS1Bios === "function") await startPS1Bios(biosBuffer);
+    } catch (e) {}
+};
+
+document.getElementById('btn-viz-toggle').onclick = () => {
+    document.getElementById('main-ui').classList.add('hidden');
+    const viz = document.getElementById('visualizer-overlay');
+    viz.classList.remove('hidden');
+    viz.classList.add('visible');
+};
+
+document.getElementById('btn-exit-viz').onclick = () => {
+    document.getElementById('visualizer-overlay').classList.remove('visible');
+    document.getElementById('visualizer-overlay').classList.add('hidden');
+    document.getElementById('main-ui').classList.remove('hidden');
+};
