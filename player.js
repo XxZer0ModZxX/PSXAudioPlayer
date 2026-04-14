@@ -5,15 +5,22 @@ const btnStop = document.getElementById('btn-stop');
 const audioEngine = document.getElementById('audio-engine');
 
 const TRACK_FILE = "Track01.mp3"; 
+let audioCtx;
+let gainNode;
 
-// 1. POWER ON
+// 1. POWER ON (Initialize the "Mixer")
 startOverlay.onclick = function() {
-    // Create a dummy audio context to "handshake" with PS5 hardware
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (AudioContext) {
-        const ctx = new AudioContext();
-        ctx.resume();
+        audioCtx = new AudioContext();
+        // Create an amplifier node
+        gainNode = audioCtx.createGain();
+        const source = audioCtx.createMediaElementSource(audioEngine);
+        source.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        gainNode.gain.value = 1.0; // Force full volume
     }
+    
     audioEngine.play().catch(function(){});
     startOverlay.style.display = 'none';
 };
@@ -21,7 +28,13 @@ startOverlay.onclick = function() {
 // 2. LOAD MUSIC
 btnLoadSong.onclick = function() {
     btnLoadSong.style.backgroundColor = "white";
-    audioEngine.muted = false; // Ensure it's not muted during load
+    
+    // Hard-reset the engine
+    audioEngine.pause();
+    audioEngine.src = "";
+    audioEngine.load();
+    
+    // Load fresh version
     audioEngine.src = TRACK_FILE + "?v=" + Date.now();
     audioEngine.load();
     
@@ -30,26 +43,24 @@ btnLoadSong.onclick = function() {
     }, 1500);
 };
 
-// 3. PLAY BUTTON (The "Volume Kick")
+// 3. PLAY BUTTON (The "Hardware Kick")
 btnPlay.onclick = function() {
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+
     audioEngine.muted = false;
     audioEngine.volume = 1.0;
-    
-    // Force the browser to refresh the audio routing
-    var playPromise = audioEngine.play();
+    if (gainNode) gainNode.gain.value = 1.0;
 
-    if (playPromise !== undefined) {
-        playPromise.then(function() {
-            btnLoadSong.style.backgroundColor = "green";
-            // If it's green but silent, we try to nudge the volume
-            setTimeout(function(){
-                audioEngine.volume = 0.9;
-                audioEngine.volume = 1.0;
-            }, 200);
-        }).catch(function() {
-            audioEngine.play();
-        });
-    }
+    audioEngine.play().then(function() {
+        btnLoadSong.style.backgroundColor = "green";
+        console.log("Audio playing at hardware level");
+    }).catch(function() {
+        // One last fallback: Restart the source
+        audioEngine.src = TRACK_FILE;
+        audioEngine.play();
+    });
 };
 
 btnStop.onclick = function() {
