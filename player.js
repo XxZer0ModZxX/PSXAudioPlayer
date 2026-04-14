@@ -6,7 +6,7 @@ const btnPause = document.getElementById('btn-pause');
 const audioEngine = document.getElementById('audio-engine');
 
 // Change this name if you test Track01.wav, Track01.m4a, etc.
-const TRACK_FILE = "Track01.mp3"; 
+const TRACK_FILE = "Track01.m4a"; 
 
 // 1. POWER ON HANDSHAKE (The "YouTube" Method)
 startOverlay.onclick = function() {
