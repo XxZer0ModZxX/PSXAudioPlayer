@@ -17,6 +17,13 @@ body {
 #start-button {
     padding: 20px 40px; border: 2px solid #00ff00;
     color: #00ff00; font-weight: bold; font-size: 24px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
 }
 
 .ps1-wrapper { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
