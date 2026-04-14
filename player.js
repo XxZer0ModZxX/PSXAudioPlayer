@@ -5,7 +5,7 @@ const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
 const audioEngine = document.getElementById('audio-engine');
 
-// Change this filename as you test different formats (e.g., Track01.wav, Track01.ogg)
+// UPDATED PATH: Includes the 'music/' folder
 const TRACK_FILE = "Track01.mp3"; 
 
 // 1. POWER ON HANDSHAKE
@@ -18,44 +18,44 @@ startOverlay.onclick = function() {
 btnLoadSong.onclick = function() {
     btnLoadSong.style.backgroundColor = "white";
     
-    // Reset engine and force muted for the initial load handshake
+    // Set source and FORCE MUTED (This is what worked for you)
     audioEngine.muted = true;
     audioEngine.src = TRACK_FILE + "?v=" + Date.now();
     audioEngine.load();
     
     audioEngine.play().then(function() {
         btnLoadSong.style.backgroundColor = "yellow";
-        console.log("Loading success - Silent play started.");
+        console.log("Playing Silently...");
     }).catch(function() {
         btnLoadSong.style.backgroundColor = "yellow";
     });
 };
 
-// 3. PLAY BUTTON (The "Green Light" Logic)
+// 3. PLAY BUTTON (The Unmute Kick)
 btnPlay.onclick = function() {
+    // Force volume settings
     audioEngine.muted = false;
     audioEngine.volume = 1.0;
-
-    // Wake up the system's master volume context (Essential for PS5)
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (AudioContext) {
-        const tempCtx = new AudioContext();
-        tempCtx.resume();
-    }
     
-    audioEngine.play().then(function() {
-        btnLoadSong.style.backgroundColor = "green";
-        // Tiny volume nudge to wake up hardware
-        audioEngine.volume = 0.99;
-        setTimeout(() => { audioEngine.volume = 1.0; }, 100);
-    }).catch(function() {
-        // Fallback: Mute, Play, then Unmute
-        audioEngine.muted = true;
-        audioEngine.play().then(function() {
-            audioEngine.muted = false;
+    var playPromise = audioEngine.play();
+
+    if (playPromise !== undefined) {
+        playPromise.then(function() {
+            // SUCCESS STATE
             btnLoadSong.style.backgroundColor = "green";
+            // Extra nudge to force hardware audio routing
+            audioEngine.volume = 0.99;
+            setTimeout(() => { audioEngine.volume = 1.0; }, 100);
+        }).catch(function() {
+            // FALLBACK logic that turned green for you before
+            audioEngine.muted = true;
+            audioEngine.play();
+            setTimeout(function() {
+                audioEngine.muted = false;
+                btnLoadSong.style.backgroundColor = "green";
+            }, 100);
         });
-    });
+    }
 };
 
 btnStop.onclick = function() {
@@ -69,9 +69,11 @@ btnPause.onclick = function() {
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
-// UI & BIOS (Standard)
+// BIOS & UI Toggle Logic (Standard)
 document.getElementById('btn-open-bios').onclick = function() {
-    fetch('./bios/SCPH7501.BIN').then(res => res.arrayBuffer()).then(buf => {
+    fetch('./bios/SCPH7501.BIN').then(function(res) {
+        return res.arrayBuffer();
+    }).then(function(buf) {
         if (typeof startPS1Bios === "function") startPS1Bios(buf);
     });
 };
