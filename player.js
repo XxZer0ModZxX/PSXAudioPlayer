@@ -6,7 +6,7 @@ const btnPause = document.getElementById('btn-pause');
 const audioEngine = document.getElementById('audio-engine');
 
 // UPDATED PATH: Includes the 'music/' folder
-const TRACK_FILE = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+const TRACK_FILE = "Track01.mp3"; 
 
 // 1. POWER ON HANDSHAKE
 startOverlay.onclick = function() {
