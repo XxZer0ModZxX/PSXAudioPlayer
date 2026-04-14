@@ -5,74 +5,106 @@ const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
 
-// The file MUST be in the root folder for this to work best
+// File must be in the root folder
 const TRACK_FILE = "Track01.mp3"; 
-let audioEngine = document.getElementById('audio-engine');
+
+let audioCtx = null;
+let audioBuffer = null;
+let sourceNode = null;
+let startTime = 0;
+let pausedAt = 0;
+let isPlaying = false;
 
 /**
- * 1. THE POWER ON
+ * 1. THE POWER ON (Initialize the Audio System)
  */
 startOverlay.onclick = () => {
+    // Create the Audio Context - This is what YouTube uses
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+    
+    // Wake up the context immediately
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    
     startOverlay.style.display = 'none';
 };
 
 /**
- * 2. THE LOAD BUTTON
- * Just prepares the state and gives feedback.
+ * 2. THE LOAD BUTTON (Download raw data into RAM)
  */
-btnLoadSong.onclick = () => {
-    btnLoadSong.style.backgroundColor = "yellow";
-    console.log("Track Ready");
+btnLoadSong.onclick = async () => {
+    btnLoadSong.style.backgroundColor = "white";
+    
+    try {
+        // Download the file as raw data (ArrayBuffer)
+        const response = await fetch(TRACK_FILE + "?v=" + Date.now());
+        const arrayBuffer = await response.arrayBuffer();
+        
+        // Decode the MP3 data into a playable buffer
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        
+        btnLoadSong.style.backgroundColor = "yellow";
+        console.log("Audio Decoded and Ready");
+    } catch (e) {
+        btnLoadSong.style.backgroundColor = "red";
+        console.error("Decode failed", e);
+    }
 };
 
 /**
- * 3. THE NUCLEAR PLAY BUTTON
- * We destroy the old audio and create a new one on every click
+ * 3. THE PLAY BUTTON (The Direct Stream)
  */
 btnPlay.onclick = () => {
-    // 1. Remove the old engine if it exists
-    if (audioEngine) {
-        audioEngine.pause();
-        audioEngine.src = "";
-        audioEngine.load();
-        audioEngine.remove();
+    if (!audioBuffer || isPlaying) return;
+
+    // Ensure context is active (PS5 requirement)
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
     }
 
-    // 2. Create a BRAND NEW audio element
-    audioEngine = document.createElement('audio');
-    audioEngine.id = "audio-engine";
-    audioEngine.playsInline = true;
-    audioEngine.src = TRACK_FILE + "?v=" + Date.now();
-    document.body.appendChild(audioEngine);
-
-    // 3. Immediate Play
-    audioEngine.play().then(() => {
-        btnLoadSong.style.backgroundColor = "green";
-    }).catch(e => {
-        // If it still fails, try one more "Muted" kickstart
-        audioEngine.muted = true;
-        audioEngine.play().then(() => {
-            audioEngine.muted = false;
-            btnLoadSong.style.backgroundColor = "green";
-        });
-    });
+    // WebAudio requires a new source for every play
+    sourceNode = audioCtx.createBufferSource();
+    sourceNode.buffer = audioBuffer;
+    sourceNode.connect(audioCtx.destination);
+    
+    // Handle the start point (for resume/pause logic)
+    sourceNode.start(0, pausedAt);
+    startTime = audioCtx.currentTime - pausedAt;
+    isPlaying = true;
+    
+    btnLoadSong.style.backgroundColor = "green";
+    
+    sourceNode.onended = () => {
+        isPlaying = false;
+        btnLoadSong.style.backgroundColor = "yellow";
+    };
 };
 
+/**
+ * 4. STOP & PAUSE
+ */
 btnStop.onclick = () => {
-    if (audioEngine) {
-        audioEngine.pause();
-        audioEngine.currentTime = 0;
+    if (sourceNode) {
+        sourceNode.stop();
+        isPlaying = false;
     }
+    pausedAt = 0;
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
 btnPause.onclick = () => {
-    if (audioEngine) audioEngine.pause();
+    if (sourceNode && isPlaying) {
+        sourceNode.stop();
+        pausedAt = audioCtx.currentTime - startTime;
+        isPlaying = false;
+    }
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
 /**
- * BIOS AND VIZ
+ * BIOS AND UI
  */
 btnOpenBios.onclick = async () => {
     try {
