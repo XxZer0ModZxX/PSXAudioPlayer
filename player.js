@@ -60,15 +60,33 @@ btnPlay.onclick = function() {
     }
 };
 
-btnStop.onclick = function() {
-    audioEngine.pause();
-    audioEngine.currentTime = 0;
-    btnLoadSong.style.backgroundColor = "yellow";
-};
-
-btnPause.onclick = function() {
-    audioEngine.pause();
-    btnLoadSong.style.backgroundColor = "yellow";
+btnPlay.onclick = function() {
+    // 1. Refresh the source (Forces PS5 to re-examine the file)
+    const currentSrc = audioEngine.src;
+    audioEngine.src = currentSrc; 
+    
+    // 2. Hard-set volume and unmute
+    audioEngine.muted = false;
+    audioEngine.volume = 1.0;
+    
+    // 3. The Play Command
+    audioEngine.play().then(function() {
+        btnLoadSong.style.backgroundColor = "green";
+        
+        // 4. THE TRICK: Quickly toggle volume to 'jumpstart' the PS5 mixer
+        setTimeout(() => {
+            audioEngine.volume = 0.5;
+            setTimeout(() => { audioEngine.volume = 1.0; }, 50);
+        }, 100);
+        
+    }).catch(function() {
+        // Fallback for strict mode
+        audioEngine.muted = true;
+        audioEngine.play().then(function() {
+            audioEngine.muted = false;
+            btnLoadSong.style.backgroundColor = "green";
+        });
+    });
 };
 
 // BIOS & UI Toggle Logic
