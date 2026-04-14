@@ -2,18 +2,14 @@ const startOverlay = document.getElementById('start-overlay');
 const btnLoadSong = document.getElementById('btn-open');
 const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
+const btnPause = document.getElementById('btn-pause');
 const audioEngine = document.getElementById('audio-engine');
 
 const TRACK_FILE = "Track01.mp3"; 
 
-// 1. POWER ON
+// 1. POWER ON HANDSHAKE
 startOverlay.onclick = function() {
-    // Create a dummy audio context to "handshake" with PS5 hardware
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (AudioContext) {
-        const ctx = new AudioContext();
-        ctx.resume();
-    }
+    // We try to "prime" the engine immediately
     audioEngine.play().catch(function(){});
     startOverlay.style.display = 'none';
 };
@@ -21,33 +17,43 @@ startOverlay.onclick = function() {
 // 2. LOAD MUSIC
 btnLoadSong.onclick = function() {
     btnLoadSong.style.backgroundColor = "white";
-    audioEngine.muted = false; // Ensure it's not muted during load
+    
+    // Set source and FORCE MUTED
+    audioEngine.muted = true;
     audioEngine.src = TRACK_FILE + "?v=" + Date.now();
     audioEngine.load();
     
-    setTimeout(function() {
+    // Attempt to start playing SILENTLY immediately
+    // Browsers often allow muted auto-play even when they block sound
+    audioEngine.play().then(function() {
         btnLoadSong.style.backgroundColor = "yellow";
-    }, 1500);
+        console.log("Playing Silently...");
+    }).catch(function() {
+        btnLoadSong.style.backgroundColor = "yellow";
+    });
 };
 
-// 3. PLAY BUTTON (The "Volume Kick")
+// 3. PLAY BUTTON (The Unmute Kick)
 btnPlay.onclick = function() {
+    // First, try to play normally
     audioEngine.muted = false;
     audioEngine.volume = 1.0;
     
-    // Force the browser to refresh the audio routing
     var playPromise = audioEngine.play();
 
     if (playPromise !== undefined) {
         playPromise.then(function() {
             btnLoadSong.style.backgroundColor = "green";
-            // If it's green but silent, we try to nudge the volume
-            setTimeout(function(){
-                audioEngine.volume = 0.9;
-                audioEngine.volume = 1.0;
-            }, 200);
         }).catch(function() {
+            // FALLBACK: If standard play fails, 
+            // the PS5 might think the 'play' was blocked. 
+            // We just flip the muted state back and forth.
+            audioEngine.muted = true;
             audioEngine.play();
+            setTimeout(function() {
+                audioEngine.muted = false;
+                btnLoadSong.style.backgroundColor = "green";
+            }, 100);
         });
     }
 };
@@ -58,13 +64,28 @@ btnStop.onclick = function() {
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
-// UI Toggles
+btnPause.onclick = function() {
+    audioEngine.pause();
+    btnLoadSong.style.backgroundColor = "yellow";
+};
+
+// BIOS & UI Toggle Logic
+document.getElementById('btn-open-bios').onclick = function() {
+    fetch('./bios/SCPH7501.BIN').then(function(res) {
+        return res.arrayBuffer();
+    }).then(function(buf) {
+        if (typeof startPS1Bios === "function") startPS1Bios(buf);
+    });
+};
+
 document.getElementById('btn-viz-toggle').onclick = function() {
     document.getElementById('main-ui').classList.add('hidden');
+    document.getElementById('visualizer-overlay').classList.remove('hidden');
     document.getElementById('visualizer-overlay').classList.add('visible');
 };
 
 document.getElementById('btn-exit-viz').onclick = function() {
     document.getElementById('visualizer-overlay').classList.remove('visible');
+    document.getElementById('visualizer-overlay').classList.add('hidden');
     document.getElementById('main-ui').classList.remove('hidden');
 };
