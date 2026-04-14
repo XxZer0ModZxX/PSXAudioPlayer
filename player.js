@@ -1,72 +1,77 @@
 const startOverlay = document.getElementById('start-overlay');
-const btnOpenBios = document.getElementById('btn-open-bios');
 const btnLoadSong = document.getElementById('btn-open');
 const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const audioEngine = document.getElementById('audio-engine');
 
-const GITHUB_BASE = "https://xxzer0modzxx.github.io/PSXAudioPlayer/music/";
-let currentTrack = "Track01.mp3";
+const MUSIC_URL = "https://xxzer0modzxx.github.io/PSXAudioPlayer/music/Track01.mp3";
+let audioBlobUrl = null;
 
-// 1. THE UNLOCKER
+// 1. UNLOCK AUDIO CONTEXT
 startOverlay.onclick = () => {
-    // Unmute and play whatever is there (currently nothing)
-    audioEngine.muted = false;
     audioEngine.play().catch(() => {});
     startOverlay.style.display = 'none';
 };
 
-// 2. LOAD MUSIC (The Selector)
-btnLoadSong.onclick = () => {
-    // Just prepares the URL, doesn't play yet
-    currentTrack = "Track01.mp3";
-    console.log("Track Queued: " + currentTrack);
+/**
+ * 2. LOAD MUSIC (The Fetcher)
+ * This downloads the file into the PS5's memory first.
+ */
+btnLoadSong.onclick = async () => {
+    console.log("Downloading track...");
+    try {
+        const response = await fetch(MUSIC_URL);
+        if (!response.ok) throw new Error("File not found");
+        
+        const blob = await response.blob();
+        
+        // Convert the raw data into a local internal URL
+        audioBlobUrl = URL.createObjectURL(blob);
+        audioEngine.src = audioBlobUrl;
+        
+        alert("CD Loaded! Press PLAY button.");
+    } catch (e) {
+        alert("Download failed. Check your GitHub file.");
+    }
 };
 
-// 3. THE MASTER PLAY BUTTON
+/**
+ * 3. PLAY BUTTON
+ */
 btnPlay.onclick = () => {
-    const targetUrl = GITHUB_BASE + currentTrack;
-    
-    // Check if we need to change the source
-    if (audioEngine.src !== targetUrl) {
-        audioEngine.src = targetUrl;
-        audioEngine.load();
+    if (!audioEngine.src || audioEngine.src === "") {
+        alert("No disc in tray. Click Load Music first.");
+        return;
     }
-    
-    // Direct playback call - MUST happen inside the click event
+
     audioEngine.play().then(() => {
-        console.log("Audio playing successfully");
+        console.log("Playing from Blob");
     }).catch(e => {
-        // Fallback: If blocked, try to force it one more time
-        audioEngine.muted = false;
-        audioEngine.play();
+        alert("Playback blocked. Tap the screen center then Play again.");
     });
 };
 
 btnStop.onclick = () => {
     audioEngine.pause();
+    audioEngine.currentTime = 0;
 };
 
-/**
- * BIOS AND VIZ LOGIC
- */
-btnOpenBios.onclick = async () => {
-    try {
-        const response = await fetch('./bios/SCPH7501.BIN');
-        const biosBuffer = await response.arrayBuffer();
-        if (typeof startPS1Bios === "function") await startPS1Bios(biosBuffer);
-    } catch (e) {}
-};
-
+// UI Toggles
 document.getElementById('btn-viz-toggle').onclick = () => {
     document.getElementById('main-ui').classList.add('hidden');
-    const viz = document.getElementById('visualizer-overlay');
-    viz.classList.remove('hidden');
-    viz.classList.add('visible');
+    document.getElementById('visualizer-overlay').classList.add('visible');
 };
 
 document.getElementById('btn-exit-viz').onclick = () => {
     document.getElementById('visualizer-overlay').classList.remove('visible');
-    document.getElementById('visualizer-overlay').classList.add('hidden');
     document.getElementById('main-ui').classList.remove('hidden');
+};
+
+// BIOS Logic
+document.getElementById('btn-open-bios').onclick = async () => {
+    try {
+        const res = await fetch('./bios/SCPH7501.BIN');
+        const buf = await res.arrayBuffer();
+        if (typeof startPS1Bios === "function") await startPS1Bios(buf);
+    } catch (e) {}
 };
