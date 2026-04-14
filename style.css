@@ -58,3 +58,15 @@ body {
 
 #viz-canvas { width: 100%; height: 90%; }
 #btn-exit-viz { margin-top: 10px; padding: 10px 20px; background: #444; border: 2px solid #fff; }
+
+/* Ensure the hitboxes are always on the very top layer */
+.hitbox {
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+}
+
+/* Make the Play button slightly larger for easier tapping on TV */
+#btn-play {
+    width: 6% !important;
+    height: 10% !important;
+}
