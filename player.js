@@ -4,48 +4,49 @@ const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const audioEngine = document.getElementById('audio-engine');
 
-const MUSIC_URL = "https://xxzer0modzxx.github.io/PSXAudioPlayer/music/Track01.mp3";
+// We use the local path to satisfy the mini-coi.js security rules
+const LOCAL_MUSIC_PATH = "./music/Track01.mp3";
 
-// 1. UNLOCK THE SYSTEM (THE HANDSHAKE)
+// 1. UNLOCK THE SYSTEM
 startOverlay.onclick = () => {
-    // We play a silent sound to open the audio gate
+    // Play silence to open the gate
     audioEngine.src = "data:audio/wav;base64,UklGRiQAAABXQVZFRm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=";
     audioEngine.play().catch(() => {});
     startOverlay.style.display = 'none';
 };
 
 /**
- * 2. THE MASTER LOAD & PLAY FUNCTION
- * On PS5, the click must trigger the Fetch AND the Playback
+ * 2. THE MASTER LOAD & PLAY
  */
 btnLoadSong.onclick = async () => {
-    // Visual feedback instead of an alert
-    btnLoadSong.style.background = "rgba(255, 255, 255, 0.8)"; 
+    // White indicates "loading"
+    btnLoadSong.style.backgroundColor = "white"; 
     
     try {
-        const response = await fetch(MUSIC_URL);
+        // Fetching locally to avoid CORS/Security errors
+        const response = await fetch(LOCAL_MUSIC_PATH);
+        if (!response.ok) throw new Error("Not Found");
+        
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         
         audioEngine.src = url;
         audioEngine.load();
         
-        // This is the "Magic" part: Play immediately after the fetch finishes
-        // while the 'click' event is still considered "active" by the browser.
+        // Attempt immediate playback
         await audioEngine.play();
         
-        btnLoadSong.style.background = "rgba(0, 255, 0, 0.4)"; // Green for success
+        // Green means it worked!
+        btnLoadSong.style.backgroundColor = "rgba(0, 255, 0, 0.6)"; 
     } catch (e) {
-        btnLoadSong.style.background = "rgba(255, 0, 0, 0.4)"; // Red for error
+        // Red means the file path ./music/Track01.mp3 was blocked or not found
+        btnLoadSong.style.backgroundColor = "red";
+        console.error(e);
     }
 };
 
-/**
- * 3. PLAY BUTTON (Secondary Manual Control)
- */
 btnPlay.onclick = () => {
     audioEngine.play().catch(() => {
-        // If blocked, we try the "Mute Flip" trick
         audioEngine.muted = false;
         audioEngine.play();
     });
@@ -56,7 +57,7 @@ btnStop.onclick = () => {
     audioEngine.currentTime = 0;
 };
 
-// BIOS Logic (Silent)
+// BIOS Logic
 document.getElementById('btn-open-bios').onclick = async () => {
     try {
         const res = await fetch('./bios/SCPH7501.BIN');
