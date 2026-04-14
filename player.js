@@ -4,81 +4,75 @@ const btnLoadSong = document.getElementById('btn-open');
 const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
-const audioEngine = document.getElementById('audio-engine');
 
+// The file MUST be in the root folder for this to work best
 const TRACK_FILE = "Track01.mp3"; 
+let audioEngine = document.getElementById('audio-engine');
 
 /**
- * 1. THE POWER ON & PRE-LOAD
- * We start the download IMMEDIATELY here.
+ * 1. THE POWER ON
  */
 startOverlay.onclick = () => {
-    // 1. Force hardware wake-up
-    audioEngine.src = TRACK_FILE; 
-    audioEngine.load(); 
-    
-    // 2. Start a silent play to "prime" the speakers
-    audioEngine.play().then(() => {
-        // If it plays immediately (rare), just pause it and wait
-        audioEngine.pause();
-    }).catch(() => {
-        // This is expected on PS5
-        console.log("Engine Primed");
-    });
-
     startOverlay.style.display = 'none';
 };
 
 /**
- * 2. THE LOAD BUTTON (The "Unlocker")
+ * 2. THE LOAD BUTTON
+ * Just prepares the state and gives feedback.
  */
 btnLoadSong.onclick = () => {
-    // Visual feedback
-    btnLoadSong.style.backgroundColor = "white";
-    
-    // Try to play the pre-loaded file
-    audioEngine.play().then(() => {
-        btnLoadSong.style.backgroundColor = "green";
-    }).catch(() => {
-        // If it still blocks, we stay yellow and wait for the Play button
-        btnLoadSong.style.backgroundColor = "yellow";
-    });
+    btnLoadSong.style.backgroundColor = "yellow";
+    console.log("Track Ready");
 };
 
 /**
- * 3. THE PLAY BUTTON (The "Hammer")
- * We use a loop here. It will try to play every 100ms 
- * for 1 second to catch the PS5 "trust window."
+ * 3. THE NUCLEAR PLAY BUTTON
+ * We destroy the old audio and create a new one on every click
  */
 btnPlay.onclick = () => {
-    let attempts = 0;
-    const interval = setInterval(() => {
-        audioEngine.muted = false;
-        audioEngine.volume = 1.0;
-        
+    // 1. Remove the old engine if it exists
+    if (audioEngine) {
+        audioEngine.pause();
+        audioEngine.src = "";
+        audioEngine.load();
+        audioEngine.remove();
+    }
+
+    // 2. Create a BRAND NEW audio element
+    audioEngine = document.createElement('audio');
+    audioEngine.id = "audio-engine";
+    audioEngine.playsInline = true;
+    audioEngine.src = TRACK_FILE + "?v=" + Date.now();
+    document.body.appendChild(audioEngine);
+
+    // 3. Immediate Play
+    audioEngine.play().then(() => {
+        btnLoadSong.style.backgroundColor = "green";
+    }).catch(e => {
+        // If it still fails, try one more "Muted" kickstart
+        audioEngine.muted = true;
         audioEngine.play().then(() => {
+            audioEngine.muted = false;
             btnLoadSong.style.backgroundColor = "green";
-            clearInterval(interval);
-        }).catch(() => {
-            attempts++;
-            if (attempts > 10) clearInterval(interval);
         });
-    }, 100);
+    });
 };
 
 btnStop.onclick = () => {
-    audioEngine.pause();
-    audioEngine.currentTime = 0;
+    if (audioEngine) {
+        audioEngine.pause();
+        audioEngine.currentTime = 0;
+    }
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
 btnPause.onclick = () => {
-    audioEngine.pause();
+    if (audioEngine) audioEngine.pause();
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
 /**
- * BIOS AND UI
+ * BIOS AND VIZ
  */
 btnOpenBios.onclick = async () => {
     try {
@@ -90,10 +84,12 @@ btnOpenBios.onclick = async () => {
 
 document.getElementById('btn-viz-toggle').onclick = () => {
     document.getElementById('main-ui').classList.add('hidden');
-    document.getElementById('visualizer-overlay').style.display = 'flex';
+    document.getElementById('visualizer-overlay').classList.remove('hidden');
+    document.getElementById('visualizer-overlay').classList.add('visible');
 };
 
 document.getElementById('btn-exit-viz').onclick = () => {
-    document.getElementById('visualizer-overlay').style.display = 'none';
+    document.getElementById('visualizer-overlay').classList.remove('visible');
+    document.getElementById('visualizer-overlay').classList.add('hidden');
     document.getElementById('main-ui').classList.remove('hidden');
 };
