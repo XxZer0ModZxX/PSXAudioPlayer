@@ -38,19 +38,13 @@ body {
 .hitbox {
     position: absolute;
     cursor: pointer;
-    background: rgba(255, 0, 255, 0.5); /* Semi-transparent pink so you can see them */
-    border: 2px solid white;
-    z-index: 100; 
-    width: 8% !important;  /* Making them much larger */
-    height: 8% !important;
-    transform: translate(-50%, -50%); /* Centering the bigger box */
-}
-
-.circle { border-radius: 50%; }
-
-.timer-container {
-    position: absolute; z-index: 5; color: #00ff00;
-    font-size: 2.5vw; font-family: monospace; text-shadow: 2px 2px #000;
+    background: rgba(255, 0, 255, 0.4); /* Make them semi-transparent */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    z-index: 100;
+    width: 3.5% !important; /* Specific size to match the PS1 buttons */
+    height: 6% !important;
+    border-radius: 50% !important; /* Keep them circular */
+    transform: translate(-50%, -50%); /* Crucial for alignment */
 }
 
 .hidden { display: none !important; }
