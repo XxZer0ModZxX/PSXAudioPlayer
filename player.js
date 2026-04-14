@@ -1,119 +1,78 @@
-// Variable Declarations
 const startOverlay = document.getElementById('start-overlay');
-const btnOpenBios = document.getElementById('btn-open-bios');
 const btnLoadSong = document.getElementById('btn-open');
 const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
+const audioEngine = document.getElementById('audio-engine');
 
+// Local file reference
 const TRACK_FILE = "Track01.mp3"; 
 
-let audioCtx = null;
-let audioBuffer = null;
-let sourceNode = null;
-let startTime = 0;
-let pausedAt = 0;
-let isPlaying = false;
-
 /**
- * 1. POWER ON HANDSHAKE
+ * 1. POWER ON
  */
-if (startOverlay) {
-    startOverlay.onclick = function() {
-        try {
-            // Initialize Web Audio
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioContext();
-            
-            // Hide overlay
-            startOverlay.style.display = 'none';
-            console.log("PSX Powered On");
-        } catch (e) {
-            alert("Web Audio not supported on this browser.");
-        }
-    };
-}
+startOverlay.onclick = function() {
+    startOverlay.style.display = 'none';
+    // Muted play attempt to wake up the engine
+    audioEngine.muted = true;
+    audioEngine.play().catch(function(){});
+};
 
 /**
  * 2. LOAD MUSIC
  */
-btnLoadSong.onclick = async function() {
-    if (!audioCtx) return;
+btnLoadSong.onclick = function() {
+    // Visual cue
     btnLoadSong.style.backgroundColor = "white";
     
-    try {
-        const response = await fetch(TRACK_FILE + "?v=" + Date.now());
-        const arrayBuffer = await response.arrayBuffer();
-        
-        // Decode raw data
-        audioCtx.decodeAudioData(arrayBuffer, function(buffer) {
-            audioBuffer = buffer;
-            btnLoadSong.style.backgroundColor = "yellow";
-            console.log("CD Ready");
-        }, function(err) {
-            btnLoadSong.style.backgroundColor = "red";
-        });
-    } catch (e) {
-        btnLoadSong.style.backgroundColor = "red";
-    }
+    // Set source and load
+    audioEngine.src = TRACK_FILE + "?v=" + Date.now();
+    audioEngine.load();
+    
+    // Give it a moment to buffer
+    setTimeout(function() {
+        btnLoadSong.style.backgroundColor = "yellow";
+    }, 1000);
 };
 
 /**
- * 3. PLAY LOGIC
+ * 3. PLAY BUTTON
  */
 btnPlay.onclick = function() {
-    if (!audioBuffer || isPlaying) return;
+    audioEngine.muted = false;
+    audioEngine.volume = 1.0;
+    
+    var playPromise = audioEngine.play();
 
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+    if (playPromise !== undefined) {
+        playPromise.then(function() {
+            btnLoadSong.style.backgroundColor = "green";
+        }).catch(function(error) {
+            // If it blocks, we try a "Hard Reset" of the source
+            audioEngine.src = TRACK_FILE;
+            audioEngine.play();
+        });
     }
-
-    sourceNode = audioCtx.createBufferSource();
-    sourceNode.buffer = audioBuffer;
-    sourceNode.connect(audioCtx.destination);
-    
-    sourceNode.start(0, pausedAt);
-    startTime = audioCtx.currentTime - pausedAt;
-    isPlaying = true;
-    
-    btnLoadSong.style.backgroundColor = "green";
-    
-    sourceNode.onended = function() {
-        if (isPlaying) {
-            isPlaying = false;
-            btnLoadSong.style.backgroundColor = "yellow";
-        }
-    };
 };
 
-/**
- * 4. STOP & PAUSE
- */
 btnStop.onclick = function() {
-    if (sourceNode) {
-        sourceNode.stop();
-        isPlaying = false;
-    }
-    pausedAt = 0;
+    audioEngine.pause();
+    audioEngine.currentTime = 0;
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
 btnPause.onclick = function() {
-    if (sourceNode && isPlaying) {
-        sourceNode.stop();
-        pausedAt = audioCtx.currentTime - startTime;
-        isPlaying = false;
-    }
+    audioEngine.pause();
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
-// BIOS and UI Logic
-btnOpenBios.onclick = async function() {
-    try {
-        const response = await fetch('./bios/SCPH7501.BIN');
-        const buffer = await response.arrayBuffer();
-        if (typeof startPS1Bios === "function") await startPS1Bios(buffer);
-    } catch (e) {}
+// BIOS & UI Logic
+document.getElementById('btn-open-bios').onclick = function() {
+    fetch('./bios/SCPH7501.BIN').then(function(res) {
+        return res.arrayBuffer();
+    }).then(function(buf) {
+        if (typeof startPS1Bios === "function") startPS1Bios(buf);
+    }).catch(function(){});
 };
 
 document.getElementById('btn-viz-toggle').onclick = function() {
