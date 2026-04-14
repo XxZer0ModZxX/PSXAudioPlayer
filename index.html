@@ -9,7 +9,9 @@
 </head>
 <body>
 
-    <div id="start-overlay">
+    <audio id="audio-engine" playsinline preload="auto"></audio>
+
+    <div id="start-overlay" style="z-index: 10000;">
         <div id="start-button">Tap to Power On PSX</div>
     </div>
 
@@ -17,8 +19,6 @@
         <div class="scaling-container">
             <img src="PSXPLAYER.png" class="background" alt="PSX UI">
             
-            <audio id="audio-engine" playsinline preload="auto"></audio>
-
             <div id="btn-next" class="hitbox circle" style="left: 23%; top: 7.5%;"></div>
             <div id="btn-ff" class="hitbox circle" style="left: 23%; top: 22.5%;"></div>
             <div id="btn-play" class="hitbox circle" style="left: 23%; top: 35.5%;"></div>
