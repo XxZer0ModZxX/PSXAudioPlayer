@@ -5,11 +5,11 @@ const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
 const audioEngine = document.getElementById('audio-engine');
 
-const TRACK_FILE = "Track01.mp3"; 
+// UPDATED PATH: Includes the 'music/' folder
+const TRACK_FILE = "music/Track01.mp3"; 
 
 // 1. POWER ON HANDSHAKE
 startOverlay.onclick = function() {
-    // We try to "prime" the engine immediately
     audioEngine.play().catch(function(){});
     startOverlay.style.display = 'none';
 };
@@ -18,13 +18,11 @@ startOverlay.onclick = function() {
 btnLoadSong.onclick = function() {
     btnLoadSong.style.backgroundColor = "white";
     
-    // Set source and FORCE MUTED
+    // Set source and FORCE MUTED (This is what worked for you)
     audioEngine.muted = true;
     audioEngine.src = TRACK_FILE + "?v=" + Date.now();
     audioEngine.load();
     
-    // Attempt to start playing SILENTLY immediately
-    // Browsers often allow muted auto-play even when they block sound
     audioEngine.play().then(function() {
         btnLoadSong.style.backgroundColor = "yellow";
         console.log("Playing Silently...");
@@ -35,7 +33,7 @@ btnLoadSong.onclick = function() {
 
 // 3. PLAY BUTTON (The Unmute Kick)
 btnPlay.onclick = function() {
-    // First, try to play normally
+    // Force volume settings
     audioEngine.muted = false;
     audioEngine.volume = 1.0;
     
@@ -43,11 +41,13 @@ btnPlay.onclick = function() {
 
     if (playPromise !== undefined) {
         playPromise.then(function() {
+            // SUCCESS STATE
             btnLoadSong.style.backgroundColor = "green";
+            // Extra nudge to force hardware audio routing
+            audioEngine.volume = 0.99;
+            setTimeout(() => { audioEngine.volume = 1.0; }, 100);
         }).catch(function() {
-            // FALLBACK: If standard play fails, 
-            // the PS5 might think the 'play' was blocked. 
-            // We just flip the muted state back and forth.
+            // FALLBACK logic that turned green for you before
             audioEngine.muted = true;
             audioEngine.play();
             setTimeout(function() {
@@ -69,7 +69,7 @@ btnPause.onclick = function() {
     btnLoadSong.style.backgroundColor = "yellow";
 };
 
-// BIOS & UI Toggle Logic
+// BIOS & UI Toggle Logic (Standard)
 document.getElementById('btn-open-bios').onclick = function() {
     fetch('./bios/SCPH7501.BIN').then(function(res) {
         return res.arrayBuffer();
