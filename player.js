@@ -31,31 +31,29 @@ btnLoadSong.onclick = function() {
     });
 };
 
-// 3. PLAY BUTTON (The Unmute Kick)
 btnPlay.onclick = function() {
-    // Force volume settings
     audioEngine.muted = false;
     audioEngine.volume = 1.0;
-    
-    var playPromise = audioEngine.play();
 
-    if (playPromise !== undefined) {
-        playPromise.then(function() {
-            // SUCCESS STATE
-            btnLoadSong.style.backgroundColor = "green";
-            // Extra nudge to force hardware audio routing
-            audioEngine.volume = 0.99;
-            setTimeout(() => { audioEngine.volume = 1.0; }, 100);
-        }).catch(function() {
-            // FALLBACK logic that turned green for you before
-            audioEngine.muted = true;
-            audioEngine.play();
-            setTimeout(function() {
-                audioEngine.muted = false;
-                btnLoadSong.style.backgroundColor = "green";
-            }, 100);
-        });
+    // Wake up the system's master volume context
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+        const tempCtx = new AudioContext();
+        tempCtx.resume();
     }
+    
+    audioEngine.play().then(function() {
+        btnLoadSong.style.backgroundColor = "green";
+        // Final hardware nudge
+        audioEngine.volume = 0.99;
+        setTimeout(() => { audioEngine.volume = 1.0; }, 100);
+    }).catch(function() {
+        audioEngine.muted = true;
+        audioEngine.play().then(function() {
+            audioEngine.muted = false;
+            btnLoadSong.style.backgroundColor = "green";
+        });
+    });
 };
 
 btnStop.onclick = function() {
