@@ -5,64 +5,49 @@ const btnStop = document.getElementById('btn-stop');
 const audioEngine = document.getElementById('audio-engine');
 
 const MUSIC_URL = "https://xxzer0modzxx.github.io/PSXAudioPlayer/music/Track01.mp3";
-let audioBlobUrl = null;
 
-/**
- * 1. THE SILENT HANDSHAKE
- * This is the most important part for PS5.
- */
+// 1. UNLOCK THE SYSTEM (THE HANDSHAKE)
 startOverlay.onclick = () => {
-    // We play a "Silent" data URI. This tells the PS5 the user wants audio.
+    // We play a silent sound to open the audio gate
     audioEngine.src = "data:audio/wav;base64,UklGRiQAAABXQVZFRm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=";
-    
-    audioEngine.play().then(() => {
-        console.log("Audio Channel Unlocked");
-        startOverlay.style.display = 'none';
-    }).catch(() => {
-        // If it fails, we still hide the overlay and hope for the best
-        startOverlay.style.display = 'none';
-    });
+    audioEngine.play().catch(() => {});
+    startOverlay.style.display = 'none';
 };
 
 /**
- * 2. LOAD MUSIC (Download to RAM)
+ * 2. THE MASTER LOAD & PLAY FUNCTION
+ * On PS5, the click must trigger the Fetch AND the Playback
  */
 btnLoadSong.onclick = async () => {
-    console.log("Downloading track...");
+    // Visual feedback instead of an alert
+    btnLoadSong.style.background = "rgba(255, 255, 255, 0.8)"; 
+    
     try {
         const response = await fetch(MUSIC_URL);
-        if (!response.ok) throw new Error("File not found");
-        
         const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
         
-        // Convert raw data to local internal URL
-        audioBlobUrl = URL.createObjectURL(blob);
-        audioEngine.src = audioBlobUrl;
-        audioEngine.load(); // Prepare the buffer
+        audioEngine.src = url;
+        audioEngine.load();
         
-        alert("CD Loaded! Click the Play button.");
+        // This is the "Magic" part: Play immediately after the fetch finishes
+        // while the 'click' event is still considered "active" by the browser.
+        await audioEngine.play();
+        
+        btnLoadSong.style.background = "rgba(0, 255, 0, 0.4)"; // Green for success
     } catch (e) {
-        alert("Download failed. Check GitHub file names.");
+        btnLoadSong.style.background = "rgba(255, 0, 0, 0.4)"; // Red for error
     }
 };
 
 /**
- * 3. THE PLAY BUTTON
+ * 3. PLAY BUTTON (Secondary Manual Control)
  */
 btnPlay.onclick = () => {
-    if (!audioEngine.src || audioEngine.src === "" || audioEngine.src.startsWith('data:')) {
-        alert("No disc in tray. Click Load Music first.");
-        return;
-    }
-
-    // Direct playback call
-    audioEngine.play().then(() => {
-        console.log("Playing...");
-    }).catch(e => {
-        // ULTIMATE FALLBACK: If blocked, try to "unmute" and play again
+    audioEngine.play().catch(() => {
+        // If blocked, we try the "Mute Flip" trick
         audioEngine.muted = false;
         audioEngine.play();
-        alert("System still blocking. Try tapping the background once, then click Play again.");
     });
 };
 
@@ -71,7 +56,7 @@ btnStop.onclick = () => {
     audioEngine.currentTime = 0;
 };
 
-// BIOS and UI Logic
+// BIOS Logic (Silent)
 document.getElementById('btn-open-bios').onclick = async () => {
     try {
         const res = await fetch('./bios/SCPH7501.BIN');
@@ -80,6 +65,7 @@ document.getElementById('btn-open-bios').onclick = async () => {
     } catch (e) {}
 };
 
+// UI Toggles
 document.getElementById('btn-viz-toggle').onclick = () => {
     document.getElementById('main-ui').classList.add('hidden');
     document.getElementById('visualizer-overlay').classList.add('visible');
