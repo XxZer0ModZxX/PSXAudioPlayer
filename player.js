@@ -1,81 +1,68 @@
 const MUSIC_PLAYLIST_ID = "PLda2GiZdqiZbhzAVAnbrCsojDbrrCUTU_";
-const VISUALS_VIDEO_ID = "EColTNIbOko"; 
-
-let musicPlayer, visualsPlayer;
+let musicPlayer;
 let idleTimer;
 
+// Initialize the Music Player only (RAM Saver)
 function onYouTubeIframeAPIReady() {
-    // Music Player - Forced to lowest possible RAM usage
     musicPlayer = new YT.Player('yt-music', {
         height: '4', width: '4',
-        playerVars: { 'listType': 'playlist', 'list': MUSIC_PLAYLIST_ID, 'playsinline': 1, 'controls': 0 },
+        playerVars: { 
+            'listType': 'playlist', 
+            'list': MUSIC_PLAYLIST_ID, 
+            'playsinline': 1, 
+            'controls': 0 
+        },
         events: { 
-            'onReady': (e) => e.target.setPlaybackQuality('small'),
-            'onStateChange': onMusicStateChange 
-        }
-    });
-
-    // Visuals Player - Only cued, not loaded yet to save RAM
-    visualsPlayer = new YT.Player('yt-visuals', {
-        height: '100%', width: '100%',
-        playerVars: { 'controls': 0, 'modestbranding': 1, 'playsinline': 1 },
-        events: { 
-            'onReady': (e) => {
-                e.target.mute();
-                e.target.setPlaybackQuality('medium'); // 360p/480p is safer for RAM
-            }
+            'onReady': (e) => e.target.setPlaybackQuality('small')
         }
     });
 }
 
-function onMusicStateChange(event) {
-    // If music stops or errors due to an ad/switch, kick it back on
-    if (event.data === YT.PlayerState.PAUSED && !document.getElementById('start-overlay')) {
-        musicPlayer.playVideo();
-    }
-}
-
+// Power On
 document.getElementById('start-overlay').onclick = function() {
     musicPlayer.playVideo();
+    setTimeout(() => { musicPlayer.pauseVideo(); }, 600);
     this.style.display = 'none';
 };
 
-// MUSIC CONTROLS
+// Controls for Music
 document.getElementById('btn-play').onclick = () => musicPlayer.playVideo();
 document.getElementById('btn-pause').onclick = () => musicPlayer.pauseVideo();
 document.getElementById('btn-stop').onclick = () => musicPlayer.stopVideo();
+document.getElementById('btn-next').onclick = () => musicPlayer.nextVideo();
+document.getElementById('btn-prev').onclick = () => musicPlayer.previousVideo();
+document.getElementById('btn-open').onclick = () => musicPlayer.cuePlaylist({ listType: 'playlist', list: MUSIC_PLAYLIST_ID });
 
-// VISUALS TOGGLE (The "Safe Load" Logic)
+// VISUALS TOGGLE (The Ninja Switch)
 document.getElementById('btn-viz-toggle').onclick = function() {
-    // 1. Show the layer
-    document.getElementById('yt-visuals').classList.add('active');
+    const vizFrame = document.getElementById('yt-visuals');
+    
+    // 1. Swap UI Layers
+    vizFrame.classList.add('active');
     document.getElementById('main-ui').classList.add('hidden');
     
-    // 2. Load the video ONLY now to prevent the double-ad crash
-    visualsPlayer.loadVideoById({
-        videoId: VISUALS_VIDEO_ID,
-        suggestedQuality: 'medium'
-    });
+    // 2. Play Video via postMessage (By-passes API overhead)
+    vizFrame.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
 
-    // 3. Keep the music speck alive
-    setTimeout(() => {
-        musicPlayer.playVideo();
-    }, 1000); // Wait 1 full second for the video/ad to initialize
+    // 3. Keep Music Alive - Force resume after the layer shift
+    setTimeout(() => { musicPlayer.playVideo(); }, 300);
     
     showBackButton();
 };
 
 document.getElementById('btn-exit-viz').onclick = function() {
-    document.getElementById('yt-visuals').classList.remove('active');
+    const vizFrame = document.getElementById('yt-visuals');
+    
+    vizFrame.classList.remove('active');
     document.getElementById('main-ui').classList.remove('hidden');
     document.getElementById('video-ui-overlay').classList.add('hidden');
     
-    // Stop the visuals stream entirely to free up RAM for the music player
-    visualsPlayer.stopVideo(); 
+    // STOP the video entirely to free up RAM for the PS5
+    vizFrame.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
     musicPlayer.playVideo();
 };
 
-// Standard Idle Timer for Back Button
+// Smart Back Button
 function showBackButton() {
     const ui = document.getElementById('video-ui-overlay');
     ui.classList.remove('hidden');
@@ -86,3 +73,7 @@ function showBackButton() {
         }
     }, 3000);
 }
+
+document.body.addEventListener('mousemove', () => {
+    if (document.getElementById('yt-visuals').classList.contains('active')) showBackButton();
+});
