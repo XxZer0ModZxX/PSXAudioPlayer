@@ -3,72 +3,104 @@ const btnLoadSong = document.getElementById('btn-open');
 const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
-const audioEngine = document.getElementById('audio-engine');
 
-// Change this name if you test Track01.wav, Track01.m4a, etc.
-const TRACK_FILE = "Track01.mp3"; 
+// YouTube Playlist Config
+const PLAYLIST_ID = "PLda2GiZdqiZbhzAVAnbrCsojDbrrCUTU_";
+let ytPlayer;
+let isEngineReady = false;
 
-// 1. POWER ON HANDSHAKE
+// 1. INITIALIZE YOUTUBE ENGINE
+function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('youtube-engine', {
+        height: '200',
+        width: '200',
+        playerVars: {
+            'listType': 'playlist',
+            'list': PLAYLIST_ID,
+            'playsinline': 1,
+            'controls': 0,
+            'disablekb': 1,
+            'enablejsapi': 1
+        },
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+        }
+    });
+}
+
+function onPlayerReady(event) {
+    isEngineReady = true;
+    console.log("YouTube Engine Ready");
+}
+
+function onPlayerStateChange(event) {
+    // Handle UI colors based on playing state
+    if (event.data == YT.PlayerState.PLAYING) {
+        btnLoadSong.style.backgroundColor = "green";
+    } else {
+        btnLoadSong.style.backgroundColor = "yellow";
+    }
+}
+
+// 2. POWER ON HANDSHAKE
 startOverlay.onclick = function() {
-    // Basic interaction to tell the browser we're active
-    audioEngine.play().catch(function(){});
+    // Hidden "kick" to ensure audio focus
+    if(isEngineReady) {
+        ytPlayer.playVideo();
+        setTimeout(() => { ytPlayer.pauseVideo(); }, 100);
+    }
     startOverlay.style.display = 'none';
 };
 
-// 2. LOAD MUSIC
+// 3. LOAD MUSIC (Cues the playlist)
 btnLoadSong.onclick = function() {
+    if(!isEngineReady) return;
+    
     btnLoadSong.style.backgroundColor = "white";
     
-    // Set source and FORCE MUTED (The handshake that worked for you)
-    audioEngine.muted = true;
-    audioEngine.src = TRACK_FILE + "?v=" + Date.now();
-    audioEngine.load();
-    
-    // Attempt silent playback immediately
-    audioEngine.play().then(function() {
-        btnLoadSong.style.backgroundColor = "yellow";
-        console.log("Playing Silently...");
-    }).catch(function() {
-        btnLoadSong.style.backgroundColor = "yellow";
+    // Cue the specific playlist
+    ytPlayer.cuePlaylist({
+        listType: 'playlist',
+        list: PLAYLIST_ID,
+        index: 0,
+        startSeconds: 0
     });
+
+    setTimeout(() => {
+        btnLoadSong.style.backgroundColor = "yellow";
+        console.log("Playlist Loaded");
+    }, 1000);
 };
 
-// 3. PLAY BUTTON (The Unmute Kick)
+// 4. PLAYER CONTROLS
 btnPlay.onclick = function() {
-    // Force volume settings
-    audioEngine.muted = false;
-    audioEngine.volume = 1.0;
-    
-    var playPromise = audioEngine.play();
-
-    if (playPromise !== undefined) {
-        playPromise.then(function() {
-            // SUCCESS STATE - TURN GREEN
-            btnLoadSong.style.backgroundColor = "green";
-            // Nudge to force audio routing
-            audioEngine.volume = 0.99;
-            setTimeout(() => { audioEngine.volume = 1.0; }, 100);
-        }).catch(function() {
-            // FALLBACK logic that turned green for you before
-            audioEngine.muted = true;
-            audioEngine.play();
-            setTimeout(function() {
-                audioEngine.muted = false;
-                btnLoadSong.style.backgroundColor = "green";
-            }, 100);
-        });
+    if(isEngineReady) {
+        ytPlayer.playVideo();
     }
 };
 
 btnStop.onclick = function() {
-    audioEngine.pause();
-    audioEngine.currentTime = 0;
-    btnLoadSong.style.backgroundColor = "yellow";
+    if(isEngineReady) {
+        ytPlayer.stopVideo();
+        btnLoadSong.style.backgroundColor = "yellow";
+    }
 };
 
 btnPause.onclick = function() {
-    audioEngine.pause();
-    btnLoadSong.style.backgroundColor = "yellow";
+    if(isEngineReady) {
+        ytPlayer.pauseVideo();
+        btnLoadSong.style.backgroundColor = "yellow";
+    }
+};
+
+// PREVIOUS / NEXT BUTTONS
+document.getElementById('btn-next').onclick = function() {
+    if(isEngineReady) ytPlayer.nextVideo();
+};
+
+document.getElementById('btn-prev').onclick = function() {
+    if(isEngineReady) ytPlayer.previousVideo();
 };
 
 // BIOS & UI Toggle Logic
