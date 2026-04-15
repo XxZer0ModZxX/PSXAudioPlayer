@@ -4,113 +4,99 @@ const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
 
-const PLAYLIST_ID = "PLda2GiZdqiZbhzAVAnbrCsojDbrrCUTU_";
+const MUSIC_PLAYLIST_ID = "PLda2GiZdqiZbhzAVAnbrCsojDbrrCUTU_";
+// Replace this with the ID of your recorded BIOS/Viz video!
+const BIOS_VIDEO_ID = "YOUR_RECORDED_VIDEO_ID_HERE"; 
+
 let ytPlayer;
 let isEngineReady = false;
-let vizActive = false; // Memory-safe flag for visualizer
 
-// 1. YOUTUBE SETUP
 function onYouTubeIframeAPIReady() {
     ytPlayer = new YT.Player('youtube-engine', {
         height: '36',
         width: '64',
         playerVars: {
             'listType': 'playlist',
-            'list': PLAYLIST_ID,
+            'list': MUSIC_PLAYLIST_ID,
             'playsinline': 1,
             'controls': 0,
-            'disablekb': 1,
             'enablejsapi': 1,
             'rel': 0,
-            'modestbranding': 1,
-            'origin': window.location.origin
+            'modestbranding': 1
         },
         events: {
-            'onReady': onPlayerReady,
+            'onReady': (e) => { isEngineReady = true; e.target.setPlaybackQuality('tiny'); },
             'onStateChange': onPlayerStateChange
         }
     });
 }
 
-function onPlayerReady(event) {
-    isEngineReady = true;
-    event.target.setPlaybackQuality('tiny');
-}
-
 function onPlayerStateChange(event) {
-    // Force tiny quality constantly to prevent high-res RAM spikes
     if (event.data == YT.PlayerState.BUFFERING || event.data == YT.PlayerState.PLAYING) {
-        event.target.setPlaybackQuality('tiny');
+        // We only use tiny quality when the video is SMALL in the corner
+        if(!document.getElementById('visualizer-overlay').classList.contains('visible')) {
+            event.target.setPlaybackQuality('tiny');
+        } else {
+            event.target.setPlaybackQuality('hd720'); // High quality when watching the "BIOS"
+        }
     }
     btnLoadSong.style.backgroundColor = (event.data == YT.PlayerState.PLAYING) ? "green" : "yellow";
 }
 
-// 2. INTERACTION HANDSHAKE
 startOverlay.onclick = function() {
     if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
-        try {
-            ytPlayer.playVideo();
-            setTimeout(() => { ytPlayer.pauseVideo(); }, 300);
-        } catch (e) {
-            console.log("Handshake skip");
-        }
+        ytPlayer.playVideo();
+        setTimeout(() => { ytPlayer.pauseVideo(); }, 300);
     }
     startOverlay.style.display = 'none';
 };
 
-// 3. MUSIC CONTROLS
-btnLoadSong.onclick = function() {
+// MUSIC CONTROLS
+btnLoadSong.onclick = () => {
     if(!isEngineReady) return;
-    btnLoadSong.style.backgroundColor = "white";
-    ytPlayer.cuePlaylist({ 
-        listType: 'playlist', 
-        list: PLAYLIST_ID, 
-        index: 0, 
-        suggestedQuality: 'tiny' 
-    });
-    setTimeout(() => { btnLoadSong.style.backgroundColor = "yellow"; }, 1000);
+    ytPlayer.cuePlaylist({ listType: 'playlist', list: MUSIC_PLAYLIST_ID, suggestedQuality: 'tiny' });
 };
 
-btnPlay.onclick = () => { if(isEngineReady) ytPlayer.playVideo(); };
-btnStop.onclick = () => { if(isEngineReady) { ytPlayer.stopVideo(); btnLoadSong.style.backgroundColor = "yellow"; } };
-btnPause.onclick = () => { if(isEngineReady) { ytPlayer.pauseVideo(); btnLoadSong.style.backgroundColor = "yellow"; } };
-document.getElementById('btn-next').onclick = () => { if(isEngineReady) ytPlayer.nextVideo(); };
-document.getElementById('btn-prev').onclick = () => { if(isEngineReady) ytPlayer.previousVideo(); };
+btnPlay.onclick = () => ytPlayer.playVideo();
+btnStop.onclick = () => ytPlayer.stopVideo();
+btnPause.onclick = () => ytPlayer.pauseVideo();
+document.getElementById('btn-next').onclick = () => ytPlayer.nextVideo();
+document.getElementById('btn-prev').onclick = () => ytPlayer.previousVideo();
 
-// 4. MEMORY-SAFE BIOS LOADER
+// THE NINJA SWITCH: Use the "Open BIOS" button to play the video
 document.getElementById('btn-open-bios').onclick = function() {
-    btnLoadSong.style.backgroundColor = "white"; 
-    
-    // Dynamically load the heavy emulator script only when requested
-    const script = document.createElement('script');
-    script.src = 'emulator-core/wasmpsx.min.js';
-    script.onload = () => {
-        fetch('./bios/SCPH7501.BIN').then(res => res.arrayBuffer()).then(buf => {
-            if (typeof startPS1Bios === "function") startPS1Bios(buf);
-            btnLoadSong.style.backgroundColor = "yellow";
-        });
-    };
-    document.body.appendChild(script);
-};
-
-// 5. VISUALIZER TOGGLE (With Memory Cleanup)
-document.getElementById('btn-viz-toggle').onclick = function() {
-    vizActive = true;
+    // 1. Hide the UI
     document.getElementById('main-ui').classList.add('hidden');
-    document.getElementById('visualizer-overlay').classList.remove('hidden');
-    document.getElementById('visualizer-overlay').classList.add('visible');
+    const viz = document.getElementById('visualizer-overlay');
+    viz.classList.remove('hidden');
+    viz.classList.add('visible');
+
+    // 2. Make the YouTube Player BIG
+    const ytDiv = document.getElementById('youtube-engine');
+    ytDiv.style.width = "100%";
+    ytDiv.style.height = "100%";
+    ytDiv.style.bottom = "0";
+    ytDiv.style.right = "0";
+    ytDiv.style.opacity = "1";
+
+    // 3. Load the recorded BIOS video
+    ytPlayer.loadVideoById(BIOS_VIDEO_ID);
 };
 
 document.getElementById('btn-exit-viz').onclick = function() {
-    vizActive = false;
+    // 1. Restore the UI
     document.getElementById('visualizer-overlay').classList.remove('visible');
     document.getElementById('visualizer-overlay').classList.add('hidden');
     document.getElementById('main-ui').classList.remove('hidden');
-    
-    // Force a canvas clear to release GPU memory
-    const canvas = document.getElementById('viz-canvas');
-    if (canvas) {
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
+
+    // 2. Make the YouTube Player TINY again
+    const ytDiv = document.getElementById('youtube-engine');
+    ytDiv.style.width = "64px";
+    ytDiv.style.height = "36px";
+    ytDiv.style.bottom = "10px";
+    ytDiv.style.right = "10px";
+    ytDiv.style.opacity = "0.5";
+
+    // 3. Go back to the music playlist
+    ytPlayer.cuePlaylist({ listType: 'playlist', list: MUSIC_PLAYLIST_ID });
 };
