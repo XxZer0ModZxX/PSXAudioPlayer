@@ -4,16 +4,14 @@ const btnPlay = document.getElementById('btn-play');
 const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
 
-// YouTube Playlist Config
 const PLAYLIST_ID = "PLda2GiZdqiZbhzAVAnbrCsojDbrrCUTU_";
 let ytPlayer;
 let isEngineReady = false;
 
-// 1. INITIALIZE YOUTUBE ENGINE
 function onYouTubeIframeAPIReady() {
     ytPlayer = new YT.Player('youtube-engine', {
-        height: '200',
-        width: '200',
+        height: '1',
+        width: '1',
         playerVars: {
             'listType': 'playlist',
             'list': PLAYLIST_ID,
@@ -21,7 +19,9 @@ function onYouTubeIframeAPIReady() {
             'controls': 0,
             'disablekb': 1,
             'enablejsapi': 1,
-            'origin': window.location.origin
+            'rel': 0,           // Don't show related videos (Saves memory)
+            'showinfo': 0,      // Hide info (Saves memory)
+            'modestbranding': 1 // Less YouTube UI bloat
         },
         events: {
             'onReady': onPlayerReady,
@@ -32,11 +32,12 @@ function onYouTubeIframeAPIReady() {
 
 function onPlayerReady(event) {
     isEngineReady = true;
-    console.log("YouTube Engine Ready");
+    // Force the lowest quality immediately to save PS5 RAM
+    event.target.setPlaybackQuality('tiny');
+    console.log("YouTube Engine Ready (Low Memory Mode)");
 }
 
 function onPlayerStateChange(event) {
-    // Green when playing, yellow when paused/stopped
     if (event.data == YT.PlayerState.PLAYING) {
         btnLoadSong.style.backgroundColor = "green";
     } else {
@@ -44,43 +45,33 @@ function onPlayerStateChange(event) {
     }
 }
 
-// 2. POWER ON HANDSHAKE
 startOverlay.onclick = function() {
-    console.log("Powering on...");
-    
     if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
         try {
-            // "Prime" the engine with a quick play/pause
             ytPlayer.playVideo();
             setTimeout(() => { ytPlayer.pauseVideo(); }, 300);
-        } catch (e) {
-            console.log("YT Prime failed");
-        }
+        } catch (e) {}
     }
-    
     startOverlay.style.display = 'none';
 };
 
-// 3. LOAD MUSIC
 btnLoadSong.onclick = function() {
     if(!isEngineReady) return;
-    
     btnLoadSong.style.backgroundColor = "white";
     
     ytPlayer.cuePlaylist({
         listType: 'playlist',
         list: PLAYLIST_ID,
         index: 0,
-        startSeconds: 0
+        startSeconds: 0,
+        suggestedQuality: 'tiny' // CRITICAL for PS5 Memory
     });
 
     setTimeout(() => {
         btnLoadSong.style.backgroundColor = "yellow";
-        console.log("Playlist Cued");
     }, 1000);
 };
 
-// 4. CONTROLS
 btnPlay.onclick = function() {
     if(isEngineReady) ytPlayer.playVideo();
 };
