@@ -12,9 +12,7 @@ body {
     height: 100vh;
 }
 
-/* FIXED: Higher Z-Index (10000) ensures this screen 
-   is the ONLY thing clickable until "Power On"
-*/
+/* Power On Screen */
 #start-overlay {
     position: fixed; 
     top: 0; 
@@ -44,6 +42,12 @@ body {
     100% { opacity: 1; }
 }
 
+/* The YouTube Engine: Transition added for smooth scaling */
+#youtube-engine {
+    border: none;
+    transition: all 0.5s ease-in-out;
+}
+
 .ps1-wrapper { 
     width: 100%; 
     height: 100%; 
@@ -70,30 +74,31 @@ body {
     z-index: 1; 
 }
 
-/* HITBOX BASE 
-*/
+/* HITBOX BASE - Using your specific centering and sizing */
 .hitbox {
     position: absolute;
     cursor: pointer;
     background: rgba(255, 0, 255, 0.4); /* Pink for testing visibility */
     border: 1px solid rgba(255, 255, 255, 0.5);
-    z-index: 9999 !important; /* Always on top of the background image */
+    z-index: 9999 !important; 
     pointer-events: auto !important;
     width: 3.5% !important; 
     height: 6% !important;
     border-radius: 50% !important; 
-    transform: translate(-50%, -50%); /* Centers the hitbox on the coordinate */
+    transform: translate(-50%, -50%); 
 }
 
-/* Make the Play button slightly larger for easier tapping on TV */
+/* Make the Play button slightly larger */
 #btn-play {
     width: 6% !important;
     height: 10% !important;
 }
 
+/* Utility Classes */
 .hidden { display: none !important; }
 .visible { display: block !important; }
 
+/* Video/Visualizer Overlay Layer */
 #visualizer-overlay {
     position: fixed; 
     top: 0; 
@@ -101,19 +106,22 @@ body {
     width: 100vw; 
     height: 100vh;
     background: #000; 
-    z-index: 100; 
+    z-index: 1100; /* Lower than start-overlay but higher than main UI */
     display: flex;
     flex-direction: column; 
     justify-content: center; 
     align-items: center;
+    pointer-events: none; /* Allows clicks to pass to the video unless hitting the exit button */
 }
 
-#viz-canvas { width: 100%; height: 90%; }
-
 #btn-exit-viz { 
-    margin-top: 10px; 
-    padding: 10px 20px; 
+    position: absolute;
+    bottom: 30px; 
+    padding: 10px 30px; 
     background: #444; 
+    color: white;
     border: 2px solid #fff; 
     cursor: pointer;
+    z-index: 10000; /* Ensure button is clickable over the video */
+    pointer-events: auto;
 }
