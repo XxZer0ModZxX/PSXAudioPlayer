@@ -7,22 +7,19 @@ body, html {
     overflow: hidden; 
 }
 
-/* PLAYER A (Music) - The "Magic Speck"
-   We put it on top of the video (z-index 3000) 
-   but make it invisible to the human eye.
-*/
+/* PLAYER A (Music) - The Stability Speck */
 #yt-music {
     position: fixed; 
     top: 0; 
     left: 0;
     width: 4px; 
     height: 4px; 
-    opacity: 1; /* Keep at 1 so the browser thinks it's active */
+    opacity: 0.1; 
     z-index: 3000; 
     pointer-events: none;
 }
 
-/* PLAYER B (Visuals) */
+/* PLAYER B (Visuals) - Hidden initially */
 #yt-visuals {
     position: fixed; 
     top: 0; 
@@ -30,17 +27,13 @@ body, html {
     width: 100vw; 
     height: 100vh;
     z-index: 5; 
-    opacity: 0; /* Changed back to 0 */
-    display: none; /* Changed back to none */
-    transition: opacity 0.8s ease-in-out;
-    pointer-events: none;
+    display: none;
+    border: none;
 }
 
 #yt-visuals.active { 
     display: block !important;
-    opacity: 1; 
     z-index: 2000; 
-    pointer-events: auto;
 }
 
 .ps1-wrapper { 
@@ -84,7 +77,7 @@ body, html {
     bottom: 50px; 
     left: 0; 
     width: 100vw;
-    z-index: 4000; /* Exit button above everything */
+    z-index: 4000; 
     display: flex; 
     justify-content: center;
     transition: opacity 0.5s ease;
@@ -97,10 +90,9 @@ body, html {
     border: 2px solid #00ff00; 
     cursor: pointer; 
     font-weight: bold; 
+    text-transform: uppercase;
 }
 
 .hidden { 
-    opacity: 0 !important; 
-    pointer-events: none !important; 
     display: none !important; 
 }
