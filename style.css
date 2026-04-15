@@ -1,37 +1,105 @@
-body, html { margin: 0; padding: 0; background-color: #000; width: 100vw; height: 100vh; overflow: hidden; }
+body, html { 
+    margin: 0; 
+    padding: 0; 
+    background-color: #000; 
+    width: 100vw; 
+    height: 100vh; 
+    overflow: hidden; 
+}
 
 /* PLAYER A (Music) - Stay small and tucked away */
 #yt-music {
-    position: fixed; bottom: 0; right: 0;
-    width: 1px; height: 1px; opacity: 0.01; z-index: 1;
+    position: fixed; 
+    bottom: 0; 
+    right: 0;
+    width: 1px; 
+    height: 1px; 
+    opacity: 0.01; 
+    z-index: 1;
 }
 
-/* PLAYER B (Visuals) - Stretch to Full Screen */
+/* PLAYER B (Visuals) - Stretch to Full Screen 
+   CHANGED: Initial opacity to 0.01 so the stream stays active 
+   and doesn't crash the music on switch.
+*/
 #yt-visuals {
-    position: fixed; top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    z-index: 5; opacity: 0;
+    position: fixed; 
+    top: 0; 
+    left: 0;
+    width: 100vw; 
+    height: 100vh;
+    z-index: 5; 
+    opacity: 0.01; 
     transition: opacity 0.8s ease-in-out;
+    pointer-events: none; /* Keep clickable through to UI until active */
 }
 
-#yt-visuals.active { opacity: 1; z-index: 2000; }
+#yt-visuals.active { 
+    opacity: 1; 
+    z-index: 2000; 
+    pointer-events: auto; /* Enable clicks for the Exit button area */
+}
 
-.ps1-wrapper { width: 100vw; height: 100vh; z-index: 1000; position: relative; display: flex; }
-.scaling-container { width: 100%; height: 100%; position: relative; }
-.background { width: 100%; height: 100%; object-fit: fill; }
+.ps1-wrapper { 
+    width: 100vw; 
+    height: 100vh; 
+    z-index: 1000; 
+    position: relative; 
+    display: flex; 
+}
+
+.scaling-container { 
+    width: 100%; 
+    height: 100%; 
+    position: relative; 
+}
+
+.background { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: fill; 
+}
 
 .hitbox {
-    position: absolute; cursor: pointer;
+    position: absolute; 
+    cursor: pointer;
     background: rgba(255, 0, 255, 0.3);
-    z-index: 1500; transform: translate(-50%, -50%);
-    width: 3.5%; height: 6%; border-radius: 50%;
+    z-index: 1500; 
+    transform: translate(-50%, -50%);
+    width: 3.5%; 
+    height: 6%; 
+    border-radius: 50%;
+}
+
+/* Keep your custom button sizing */
+#btn-play {
+    width: 6% !important;
+    height: 10% !important;
 }
 
 #video-ui-overlay {
-    position: fixed; bottom: 50px; left: 0; width: 100vw;
-    z-index: 3000; display: flex; justify-content: center;
+    position: fixed; 
+    bottom: 50px; 
+    left: 0; 
+    width: 100vw;
+    z-index: 3000; 
+    display: flex; 
+    justify-content: center;
     transition: opacity 0.5s ease;
 }
 
-#btn-exit-viz { padding: 15px 40px; background: rgba(0,0,0,0.8); color: #00ff00; border: 2px solid #00ff00; cursor: pointer; font-weight: bold; }
-.hidden { opacity: 0 !important; pointer-events: none !important; }
+#btn-exit-viz { 
+    padding: 15px 40px; 
+    background: rgba(0,0,0,0.8); 
+    color: #00ff00; 
+    border: 2px solid #00ff00; 
+    cursor: pointer; 
+    font-weight: bold; 
+}
+
+/* Ensure hidden elements truly vanish from the PS5 memory */
+.hidden { 
+    opacity: 0 !important; 
+    pointer-events: none !important; 
+    display: none !important; 
+}
