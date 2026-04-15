@@ -45,17 +45,29 @@ function onPlayerStateChange(event) {
 
 // 2. POWER ON HANDSHAKE
 startOverlay.onclick = function() {
-    // Hidden "kick" to ensure audio focus
-    if(isEngineReady) {
-        ytPlayer.playVideo();
-        setTimeout(() => { ytPlayer.pauseVideo(); }, 100);
+    console.log("Power button clicked");
+    
+    // Attempt the YouTube handshake only if the player exists
+    if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+        try {
+            ytPlayer.playVideo();
+            // Pause it almost immediately so it's ready to go later
+            setTimeout(() => { ytPlayer.pauseVideo(); }, 200);
+        } catch (e) {
+            console.log("YT Handshake failed, but continuing...");
+        }
     }
+    
+    // Hide the overlay
     startOverlay.style.display = 'none';
 };
 
 // 3. LOAD MUSIC (Cues the playlist)
 btnLoadSong.onclick = function() {
-    if(!isEngineReady) return;
+    if(!isEngineReady) {
+        alert("YouTube Engine still loading, please wait a second.");
+        return;
+    }
     
     btnLoadSong.style.backgroundColor = "white";
     
