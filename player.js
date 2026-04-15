@@ -19,9 +19,8 @@ function onYouTubeIframeAPIReady() {
             'controls': 0,
             'disablekb': 1,
             'enablejsapi': 1,
-            'rel': 0,           // Don't show related videos (Saves memory)
-            'showinfo': 0,      // Hide info (Saves memory)
-            'modestbranding': 1 // Less YouTube UI bloat
+            'rel': 0,
+            'modestbranding': 1
         },
         events: {
             'onReady': onPlayerReady,
@@ -32,12 +31,16 @@ function onYouTubeIframeAPIReady() {
 
 function onPlayerReady(event) {
     isEngineReady = true;
-    // Force the lowest quality immediately to save PS5 RAM
     event.target.setPlaybackQuality('tiny');
     console.log("YouTube Engine Ready (Low Memory Mode)");
 }
 
 function onPlayerStateChange(event) {
+    // REINFORCE TINY QUALITY ON EVERY CHANGE/BUFFER
+    if (event.data == YT.PlayerState.BUFFERING || event.data == YT.PlayerState.PLAYING) {
+        event.target.setPlaybackQuality('tiny');
+    }
+
     if (event.data == YT.PlayerState.PLAYING) {
         btnLoadSong.style.backgroundColor = "green";
     } else {
@@ -64,7 +67,7 @@ btnLoadSong.onclick = function() {
         list: PLAYLIST_ID,
         index: 0,
         startSeconds: 0,
-        suggestedQuality: 'tiny' // CRITICAL for PS5 Memory
+        suggestedQuality: 'tiny'
     });
 
     setTimeout(() => {
