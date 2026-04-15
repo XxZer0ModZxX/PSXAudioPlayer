@@ -1,69 +1,73 @@
-const startOverlay = document.getElementById('start-overlay');
-const btnLoadSong = document.getElementById('btn-open');
-const btnPlay = document.getElementById('btn-play');
-const ytDiv = document.getElementById('youtube-engine');
-const videoUI = document.getElementById('video-ui-overlay');
-const mainUI = document.getElementById('main-ui');
-
 const MUSIC_PLAYLIST_ID = "PLda2GiZdqiZbhzAVAnbrCsojDbrrCUTU_";
-const TEST_VIDEO_ID = "EColTNIbOko"; 
+const VISUALS_VIDEO_ID = "EColTNIbOko"; 
 
-let ytPlayer;
-let isEngineReady = false;
+let musicPlayer, visualsPlayer;
+let idleTimer;
 
+// Create both players
 function onYouTubeIframeAPIReady() {
-    ytPlayer = new YT.Player('youtube-engine', {
-        height: '100%',
-        width: '100%',
-        playerVars: {
-            'listType': 'playlist',
-            'list': MUSIC_PLAYLIST_ID,
-            'playsinline': 1,
-            'controls': 0,
-            'modestbranding': 1,
-            'iv_load_policy': 3
-        },
-        events: {
-            'onReady': () => { isEngineReady = true; },
-            'onStateChange': (e) => {
-                btnLoadSong.style.backgroundColor = (e.data == YT.PlayerState.PLAYING) ? "green" : "yellow";
-            }
-        }
+    // Music Player (Audio only, tiny quality)
+    musicPlayer = new YT.Player('yt-music', {
+        height: '1', width: '1',
+        playerVars: { 'listType': 'playlist', 'list': MUSIC_PLAYLIST_ID, 'playsinline': 1, 'controls': 0 },
+        events: { 'onReady': (e) => e.target.setPlaybackQuality('tiny') }
+    });
+
+    // Visuals Player (Video only, HD quality)
+    visualsPlayer = new YT.Player('yt-visuals', {
+        height: '100%', width: '100%',
+        playerVars: { 'autoplay': 0, 'controls': 0, 'modestbranding': 1, 'loop': 1, 'playlist': VISUALS_VIDEO_ID },
+        events: { 'onReady': (e) => e.target.setPlaybackQuality('hd720') }
     });
 }
 
-startOverlay.onclick = function() {
-    if (ytPlayer && isEngineReady) {
-        ytPlayer.playVideo();
-        setTimeout(() => { ytPlayer.pauseVideo(); }, 500);
-    }
-    startOverlay.style.display = 'none';
+// Power On
+document.getElementById('start-overlay').onclick = function() {
+    musicPlayer.playVideo();
+    visualsPlayer.playVideo(); 
+    setTimeout(() => { 
+        musicPlayer.pauseVideo();
+        visualsPlayer.pauseVideo(); 
+        visualsPlayer.mute(); // Ensure the 10h test video stays silent
+    }, 500);
+    this.style.display = 'none';
 };
 
-// MUSIC CONTROLS
-btnLoadSong.onclick = () => ytPlayer.cuePlaylist({ listType: 'playlist', list: MUSIC_PLAYLIST_ID });
-btnPlay.onclick = () => ytPlayer.playVideo();
-document.getElementById('btn-stop').onclick = () => ytPlayer.stopVideo();
-document.getElementById('btn-pause').onclick = () => ytPlayer.pauseVideo();
-document.getElementById('btn-next').onclick = () => ytPlayer.nextVideo();
-document.getElementById('btn-prev').onclick = () => ytPlayer.previousVideo();
+// MUSIC CONTROLS (Targeting MusicPlayer)
+document.getElementById('btn-open').onclick = () => musicPlayer.cuePlaylist({ listType: 'playlist', list: MUSIC_PLAYLIST_ID });
+document.getElementById('btn-play').onclick = () => musicPlayer.playVideo();
+document.getElementById('btn-stop').onclick = () => musicPlayer.stopVideo();
+document.getElementById('btn-pause').onclick = () => musicPlayer.pauseVideo();
+document.getElementById('btn-next').onclick = () => musicPlayer.nextVideo();
+document.getElementById('btn-prev').onclick = () => musicPlayer.previousVideo();
 
-// VISUALS TRIGGER (Middle Button)
+// VISUALS TOGGLE
 document.getElementById('btn-viz-toggle').onclick = function() {
-    // 1. Swap Video
-    ytPlayer.loadVideoById(TEST_VIDEO_ID);
-    // 2. Bring Video to front
-    ytDiv.classList.add('full-mode');
-    videoUI.classList.remove('hidden');
-    mainUI.classList.add('hidden');
+    document.getElementById('yt-visuals').classList.add('active');
+    document.getElementById('main-ui').classList.add('hidden');
+    visualsPlayer.playVideo(); 
+    showBackButton();
 };
 
-// BACK BUTTON
 document.getElementById('btn-exit-viz').onclick = function() {
-    // 1. Hide Video
-    ytDiv.classList.remove('full-mode');
-    videoUI.classList.add('hidden');
-    mainUI.classList.remove('hidden');
-    // 2. Back to music
-    ytPlayer.cuePlaylist({ listType: 'playlist', list: MUSIC_PLAYLIST_ID });
+    document.getElementById('yt-visuals').classList.remove('active');
+    document.getElementById('main-ui').classList.remove('hidden');
+    document.getElementById('video-ui-overlay').classList.add('hidden');
+    // Note: Music player keeps playing in the background!
 };
+
+// IDLE TIMER FOR BACK BUTTON
+function showBackButton() {
+    const ui = document.getElementById('video-ui-overlay');
+    ui.classList.remove('hidden');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+        if (document.getElementById('yt-visuals').classList.contains('active')) {
+            ui.classList.add('hidden');
+        }
+    }, 3000);
+}
+
+document.body.addEventListener('mousemove', () => {
+    if (document.getElementById('yt-visuals').classList.contains('active')) showBackButton();
+});
