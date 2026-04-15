@@ -20,7 +20,8 @@ function onYouTubeIframeAPIReady() {
             'playsinline': 1,
             'controls': 0,
             'disablekb': 1,
-            'enablejsapi': 1
+            'enablejsapi': 1,
+            'origin': window.location.origin
         },
         events: {
             'onReady': onPlayerReady,
@@ -35,7 +36,7 @@ function onPlayerReady(event) {
 }
 
 function onPlayerStateChange(event) {
-    // Handle UI colors based on playing state
+    // Green when playing, yellow when paused/stopped
     if (event.data == YT.PlayerState.PLAYING) {
         btnLoadSong.style.backgroundColor = "green";
     } else {
@@ -45,33 +46,27 @@ function onPlayerStateChange(event) {
 
 // 2. POWER ON HANDSHAKE
 startOverlay.onclick = function() {
-    console.log("Power button clicked");
+    console.log("Powering on...");
     
-    // Attempt the YouTube handshake only if the player exists
     if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
         try {
+            // "Prime" the engine with a quick play/pause
             ytPlayer.playVideo();
-            // Pause it almost immediately so it's ready to go later
-            setTimeout(() => { ytPlayer.pauseVideo(); }, 200);
+            setTimeout(() => { ytPlayer.pauseVideo(); }, 300);
         } catch (e) {
-            console.log("YT Handshake failed, but continuing...");
+            console.log("YT Prime failed");
         }
     }
     
-    // Hide the overlay
     startOverlay.style.display = 'none';
 };
 
-// 3. LOAD MUSIC (Cues the playlist)
+// 3. LOAD MUSIC
 btnLoadSong.onclick = function() {
-    if(!isEngineReady) {
-        alert("YouTube Engine still loading, please wait a second.");
-        return;
-    }
+    if(!isEngineReady) return;
     
     btnLoadSong.style.backgroundColor = "white";
     
-    // Cue the specific playlist
     ytPlayer.cuePlaylist({
         listType: 'playlist',
         list: PLAYLIST_ID,
@@ -81,15 +76,13 @@ btnLoadSong.onclick = function() {
 
     setTimeout(() => {
         btnLoadSong.style.backgroundColor = "yellow";
-        console.log("Playlist Loaded");
+        console.log("Playlist Cued");
     }, 1000);
 };
 
-// 4. PLAYER CONTROLS
+// 4. CONTROLS
 btnPlay.onclick = function() {
-    if(isEngineReady) {
-        ytPlayer.playVideo();
-    }
+    if(isEngineReady) ytPlayer.playVideo();
 };
 
 btnStop.onclick = function() {
@@ -106,7 +99,6 @@ btnPause.onclick = function() {
     }
 };
 
-// PREVIOUS / NEXT BUTTONS
 document.getElementById('btn-next').onclick = function() {
     if(isEngineReady) ytPlayer.nextVideo();
 };
@@ -115,11 +107,9 @@ document.getElementById('btn-prev').onclick = function() {
     if(isEngineReady) ytPlayer.previousVideo();
 };
 
-// BIOS & UI Toggle Logic
+// BIOS & UI Toggle
 document.getElementById('btn-open-bios').onclick = function() {
-    fetch('./bios/SCPH7501.BIN').then(function(res) {
-        return res.arrayBuffer();
-    }).then(function(buf) {
+    fetch('./bios/SCPH7501.BIN').then(res => res.arrayBuffer()).then(buf => {
         if (typeof startPS1Bios === "function") startPS1Bios(buf);
     });
 };
