@@ -7,12 +7,13 @@ const btnPause = document.getElementById('btn-pause');
 const PLAYLIST_ID = "PLda2GiZdqiZbhzAVAnbrCsojDbrrCUTU_";
 let ytPlayer;
 let isEngineReady = false;
+let vizActive = false; // Memory-safe flag for visualizer
 
 // 1. YOUTUBE SETUP
 function onYouTubeIframeAPIReady() {
     ytPlayer = new YT.Player('youtube-engine', {
-        height: '1',
-        width: '1',
+        height: '36',
+        width: '64',
         playerVars: {
             'listType': 'playlist',
             'list': PLAYLIST_ID,
@@ -21,7 +22,8 @@ function onYouTubeIframeAPIReady() {
             'disablekb': 1,
             'enablejsapi': 1,
             'rel': 0,
-            'modestbranding': 1
+            'modestbranding': 1,
+            'origin': window.location.origin
         },
         events: {
             'onReady': onPlayerReady,
@@ -36,6 +38,7 @@ function onPlayerReady(event) {
 }
 
 function onPlayerStateChange(event) {
+    // Force tiny quality constantly to prevent high-res RAM spikes
     if (event.data == YT.PlayerState.BUFFERING || event.data == YT.PlayerState.PLAYING) {
         event.target.setPlaybackQuality('tiny');
     }
@@ -48,7 +51,9 @@ startOverlay.onclick = function() {
         try {
             ytPlayer.playVideo();
             setTimeout(() => { ytPlayer.pauseVideo(); }, 300);
-        } catch (e) {}
+        } catch (e) {
+            console.log("Handshake skip");
+        }
     }
     startOverlay.style.display = 'none';
 };
@@ -57,7 +62,12 @@ startOverlay.onclick = function() {
 btnLoadSong.onclick = function() {
     if(!isEngineReady) return;
     btnLoadSong.style.backgroundColor = "white";
-    ytPlayer.cuePlaylist({ listType: 'playlist', list: PLAYLIST_ID, index: 0, suggestedQuality: 'tiny' });
+    ytPlayer.cuePlaylist({ 
+        listType: 'playlist', 
+        list: PLAYLIST_ID, 
+        index: 0, 
+        suggestedQuality: 'tiny' 
+    });
     setTimeout(() => { btnLoadSong.style.backgroundColor = "yellow"; }, 1000);
 };
 
@@ -69,9 +79,9 @@ document.getElementById('btn-prev').onclick = () => { if(isEngineReady) ytPlayer
 
 // 4. MEMORY-SAFE BIOS LOADER
 document.getElementById('btn-open-bios').onclick = function() {
-    btnLoadSong.style.backgroundColor = "white"; // Show loading state
+    btnLoadSong.style.backgroundColor = "white"; 
     
-    // Dynamically load the heavy emulator script only when needed
+    // Dynamically load the heavy emulator script only when requested
     const script = document.createElement('script');
     script.src = 'emulator-core/wasmpsx.min.js';
     script.onload = () => {
@@ -83,15 +93,24 @@ document.getElementById('btn-open-bios').onclick = function() {
     document.body.appendChild(script);
 };
 
-// 5. VISUALIZER TOGGLE
+// 5. VISUALIZER TOGGLE (With Memory Cleanup)
 document.getElementById('btn-viz-toggle').onclick = function() {
+    vizActive = true;
     document.getElementById('main-ui').classList.add('hidden');
     document.getElementById('visualizer-overlay').classList.remove('hidden');
     document.getElementById('visualizer-overlay').classList.add('visible');
 };
 
 document.getElementById('btn-exit-viz').onclick = function() {
+    vizActive = false;
     document.getElementById('visualizer-overlay').classList.remove('visible');
     document.getElementById('visualizer-overlay').classList.add('hidden');
     document.getElementById('main-ui').classList.remove('hidden');
+    
+    // Force a canvas clear to release GPU memory
+    const canvas = document.getElementById('viz-canvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 };
