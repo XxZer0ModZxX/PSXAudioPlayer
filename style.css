@@ -30,14 +30,16 @@ body, html {
     width: 100vw; 
     height: 100vh;
     z-index: 5; 
-    opacity: 0.01; 
+    opacity: 0; /* Changed back to 0 */
+    display: none; /* Changed back to none */
     transition: opacity 0.8s ease-in-out;
     pointer-events: none;
 }
 
 #yt-visuals.active { 
+    display: block !important;
     opacity: 1; 
-    z-index: 2000; /* Stays UNDER the Music Speck (3000) */
+    z-index: 2000; 
     pointer-events: auto;
 }
 
