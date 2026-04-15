@@ -5,11 +5,12 @@ const btnStop = document.getElementById('btn-stop');
 const btnPause = document.getElementById('btn-pause');
 
 const MUSIC_PLAYLIST_ID = "PLda2GiZdqiZbhzAVAnbrCsojDbrrCUTU_";
-// Replace this with the ID of your recorded BIOS/Viz video!
-const BIOS_VIDEO_ID = "YOUR_RECORDED_VIDEO_ID_HERE"; 
+// The 10-hour test video ID
+const TEST_VIDEO_ID = "EColTNIbOko"; 
 
 let ytPlayer;
 let isEngineReady = false;
+let isBiosMode = false;
 
 function onYouTubeIframeAPIReady() {
     ytPlayer = new YT.Player('youtube-engine', {
@@ -33,11 +34,11 @@ function onYouTubeIframeAPIReady() {
 
 function onPlayerStateChange(event) {
     if (event.data == YT.PlayerState.BUFFERING || event.data == YT.PlayerState.PLAYING) {
-        // We only use tiny quality when the video is SMALL in the corner
-        if(!document.getElementById('visualizer-overlay').classList.contains('visible')) {
+        // If we are NOT in BIOS mode, keep it tiny. If we ARE, go High Quality.
+        if(!isBiosMode) {
             event.target.setPlaybackQuality('tiny');
         } else {
-            event.target.setPlaybackQuality('hd720'); // High quality when watching the "BIOS"
+            event.target.setPlaybackQuality('hd720'); 
         }
     }
     btnLoadSong.style.backgroundColor = (event.data == YT.PlayerState.PLAYING) ? "green" : "yellow";
@@ -54,6 +55,7 @@ startOverlay.onclick = function() {
 // MUSIC CONTROLS
 btnLoadSong.onclick = () => {
     if(!isEngineReady) return;
+    isBiosMode = false;
     ytPlayer.cuePlaylist({ listType: 'playlist', list: MUSIC_PLAYLIST_ID, suggestedQuality: 'tiny' });
 };
 
@@ -63,39 +65,42 @@ btnPause.onclick = () => ytPlayer.pauseVideo();
 document.getElementById('btn-next').onclick = () => ytPlayer.nextVideo();
 document.getElementById('btn-prev').onclick = () => ytPlayer.previousVideo();
 
-// THE NINJA SWITCH: Use the "Open BIOS" button to play the video
+// THE TEST SWITCH: Open BIOS plays the 10h video
 document.getElementById('btn-open-bios').onclick = function() {
+    isBiosMode = true;
+    
     // 1. Hide the UI
     document.getElementById('main-ui').classList.add('hidden');
-    const viz = document.getElementById('visualizer-overlay');
-    viz.classList.remove('hidden');
-    viz.classList.add('visible');
+    document.getElementById('visualizer-overlay').classList.remove('hidden');
 
-    // 2. Make the YouTube Player BIG
+    // 2. Make YouTube FULL SCREEN
     const ytDiv = document.getElementById('youtube-engine');
-    ytDiv.style.width = "100%";
-    ytDiv.style.height = "100%";
+    ytDiv.style.width = "100vw";
+    ytDiv.style.height = "100vh";
     ytDiv.style.bottom = "0";
     ytDiv.style.right = "0";
     ytDiv.style.opacity = "1";
+    ytDiv.style.zIndex = "1500"; // Put it behind the Exit button but above UI
 
-    // 3. Load the recorded BIOS video
-    ytPlayer.loadVideoById(BIOS_VIDEO_ID);
+    // 3. Load the 10h Video
+    ytPlayer.loadVideoById(TEST_VIDEO_ID);
 };
 
 document.getElementById('btn-exit-viz').onclick = function() {
+    isBiosMode = false;
+
     // 1. Restore the UI
-    document.getElementById('visualizer-overlay').classList.remove('visible');
     document.getElementById('visualizer-overlay').classList.add('hidden');
     document.getElementById('main-ui').classList.remove('hidden');
 
-    // 2. Make the YouTube Player TINY again
+    // 2. Make YouTube TINY again
     const ytDiv = document.getElementById('youtube-engine');
     ytDiv.style.width = "64px";
     ytDiv.style.height = "36px";
     ytDiv.style.bottom = "10px";
     ytDiv.style.right = "10px";
     ytDiv.style.opacity = "0.5";
+    ytDiv.style.zIndex = "1000";
 
     // 3. Go back to the music playlist
     ytPlayer.cuePlaylist({ listType: 'playlist', list: MUSIC_PLAYLIST_ID });
