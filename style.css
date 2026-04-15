@@ -7,21 +7,22 @@ body, html {
     overflow: hidden; 
 }
 
-/* PLAYER A (Music) - Stay small and tucked away */
+/* PLAYER A (Music) - The "Magic Speck"
+   We put it on top of the video (z-index 3000) 
+   but make it invisible to the human eye.
+*/
 #yt-music {
     position: fixed; 
-    bottom: 0; 
-    right: 0;
-    width: 1px; 
-    height: 1px; 
-    opacity: 0.01; 
-    z-index: 1;
+    top: 0; 
+    left: 0;
+    width: 4px; 
+    height: 4px; 
+    opacity: 1; /* Keep at 1 so the browser thinks it's active */
+    z-index: 3000; 
+    pointer-events: none;
 }
 
-/* PLAYER B (Visuals) - Stretch to Full Screen 
-   CHANGED: Initial opacity to 0.01 so the stream stays active 
-   and doesn't crash the music on switch.
-*/
+/* PLAYER B (Visuals) */
 #yt-visuals {
     position: fixed; 
     top: 0; 
@@ -31,13 +32,13 @@ body, html {
     z-index: 5; 
     opacity: 0.01; 
     transition: opacity 0.8s ease-in-out;
-    pointer-events: none; /* Keep clickable through to UI until active */
+    pointer-events: none;
 }
 
 #yt-visuals.active { 
     opacity: 1; 
-    z-index: 2000; 
-    pointer-events: auto; /* Enable clicks for the Exit button area */
+    z-index: 2000; /* Stays UNDER the Music Speck (3000) */
+    pointer-events: auto;
 }
 
 .ps1-wrapper { 
@@ -71,7 +72,6 @@ body, html {
     border-radius: 50%;
 }
 
-/* Keep your custom button sizing */
 #btn-play {
     width: 6% !important;
     height: 10% !important;
@@ -82,7 +82,7 @@ body, html {
     bottom: 50px; 
     left: 0; 
     width: 100vw;
-    z-index: 3000; 
+    z-index: 4000; /* Exit button above everything */
     display: flex; 
     justify-content: center;
     transition: opacity 0.5s ease;
@@ -97,7 +97,6 @@ body, html {
     font-weight: bold; 
 }
 
-/* Ensure hidden elements truly vanish from the PS5 memory */
 .hidden { 
     opacity: 0 !important; 
     pointer-events: none !important; 
