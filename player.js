@@ -3,32 +3,30 @@ const VISUALS_VIDEO_ID = "EColTNIbOko";
 
 let musicPlayer, visualsPlayer;
 let idleTimer;
-let isVisualsLoading = false;
 
 function onYouTubeIframeAPIReady() {
-    // Music Player
+    // Player A: Music
     musicPlayer = new YT.Player('yt-music', {
         height: '1', width: '1',
         playerVars: { 'listType': 'playlist', 'list': MUSIC_PLAYLIST_ID, 'playsinline': 1, 'controls': 0 },
         events: { 'onReady': (e) => e.target.setPlaybackQuality('tiny') }
     });
 
-    // Visuals Player
+    // Player B: Visuals
     visualsPlayer = new YT.Player('yt-visuals', {
         height: '100%', width: '100%',
         playerVars: { 'autoplay': 0, 'controls': 0, 'modestbranding': 1, 'loop': 1, 'playlist': VISUALS_VIDEO_ID, 'playsinline': 1 },
         events: { 
             'onReady': (e) => {
-                e.target.mute(); 
+                e.target.mute(); // Keep visuals silent
                 e.target.setPlaybackQuality('hd720');
             }
         }
     });
 }
 
-// POWER ON HANDSHAKE
+// 1. POWER ON: Warm up both engines
 document.getElementById('start-overlay').onclick = function() {
-    // Warm up both engines immediately
     musicPlayer.playVideo();
     visualsPlayer.playVideo();
     setTimeout(() => { 
@@ -38,43 +36,50 @@ document.getElementById('start-overlay').onclick = function() {
     this.style.display = 'none';
 };
 
-// UNIFIED PLAY BUTTON
+// 2. PLAY BUTTON: Starts both (Video stays at 0.01 opacity)
 document.getElementById('btn-play').onclick = function() {
     musicPlayer.playVideo();
-    // Start visuals in the background so they are ready when we switch
     visualsPlayer.playVideo(); 
 };
 
-// VISUALS TOGGLE (The "Curtain" Move)
+// 3. VISUALS TOGGLE: The "Force Sync" Logic
 document.getElementById('btn-viz-toggle').onclick = function() {
-    // Ensure visuals are playing before we show them
-    if (visualsPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
-        visualsPlayer.playVideo();
-    }
-
+    // Bring Visuals to front
     document.getElementById('yt-visuals').classList.add('active');
     document.getElementById('main-ui').classList.add('hidden');
     
-    // Tiny delay to let the PS5 handle the layer swap, then reinforce music
-    setTimeout(() => { musicPlayer.playVideo(); }, 100);
+    // Ensure the visuals are playing
+    visualsPlayer.playVideo();
+
+    // THE AGGRESSIVE FIX: 
+    // Wait a tiny moment for the browser to try and pause the music,
+    // then immediately force the music back on.
+    setTimeout(() => {
+        musicPlayer.playVideo();
+    }, 150); 
     
     showBackButton();
 };
 
+// 4. EXIT VISUALS
 document.getElementById('btn-exit-viz').onclick = function() {
     document.getElementById('yt-visuals').classList.remove('active');
     document.getElementById('main-ui').classList.remove('hidden');
     document.getElementById('video-ui-overlay').classList.add('hidden');
-    // We leave the visuals playing in the background so they don't have to reload!
+    
+    // We keep visuals playing at 0.01 opacity so they are ready for next time
+    // But we re-verify music is still going
+    musicPlayer.playVideo();
 };
 
-// OTHER CONTROLS
+// 5. OTHER CONTROLS
 document.getElementById('btn-open').onclick = () => musicPlayer.cuePlaylist({ listType: 'playlist', list: MUSIC_PLAYLIST_ID });
 document.getElementById('btn-stop').onclick = () => { musicPlayer.stopVideo(); visualsPlayer.stopVideo(); };
 document.getElementById('btn-pause').onclick = () => { musicPlayer.pauseVideo(); visualsPlayer.pauseVideo(); };
 document.getElementById('btn-next').onclick = () => musicPlayer.nextVideo();
 document.getElementById('btn-prev').onclick = () => musicPlayer.previousVideo();
 
+// IDLE TIMER
 function showBackButton() {
     const ui = document.getElementById('video-ui-overlay');
     ui.classList.remove('hidden');
@@ -85,3 +90,7 @@ function showBackButton() {
         }
     }, 3000);
 }
+
+document.body.addEventListener('mousemove', () => {
+    if (document.getElementById('yt-visuals').classList.contains('active')) showBackButton();
+});
