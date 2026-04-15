@@ -1,24 +1,153 @@
-/* Update these specific parts in your CSS */
+/* 1. BASE SYSTEM RESET */
+body, html {
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
+/* 2. PLAYER A (MUSIC) - TINY & HIDDEN */
+#yt-music {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0.01;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* 3. PLAYER B (VISUALS) - THE "GHOST" LAYER 
+   We keep it at 0.01 opacity so the PS5 keeps the hardware decoder 
+   running, preventing the music from pausing when we "switch" screens.
+*/
 #yt-visuals {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: 1; /* Sit behind the UI */
-    opacity: 0.01; /* Almost invisible but still rendering */
-    transition: opacity 0.5s ease;
+    z-index: 2; /* Sits behind the UI initially */
+    opacity: 0.01; 
+    transition: opacity 0.5s ease-in-out;
     pointer-events: none;
 }
 
 #yt-visuals.active {
     opacity: 1;
-    z-index: 2000;
+    z-index: 2000; /* Jumps to the very front */
     pointer-events: auto;
 }
 
-/* Ensure the main UI is actually removed from rendering when visuals are on */
-.ps1-wrapper.hidden {
+/* 4. POWER ON SCREEN */
+#start-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    cursor: pointer;
+}
+
+#start-button {
+    padding: 20px 40px;
+    border: 2px solid #00ff00;
+    color: #00ff00;
+    font-weight: bold;
+    font-size: 24px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* 5. MAIN UI & STRETCHING LOGIC */
+.ps1-wrapper {
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.scaling-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh; /* Forces container to match screen */
+}
+
+.background {
+    width: 100%;
+    height: 100%;
+    object-fit: fill; /* STRETCH: Forces the PSX image to fill the screen */
+    z-index: 1;
+}
+
+/* 6. HITBOXES */
+.hitbox {
+    position: absolute;
+    cursor: pointer;
+    background: rgba(255, 0, 255, 0.4); /* Pink for testing */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    z-index: 1500;
+    pointer-events: auto;
+    width: 3.5%;
+    height: 6%;
+    border-radius: 50%;
+    transform: translate(-50%, -50%); /* Centers on your coordinates */
+}
+
+/* Play button is larger for TV use */
+#btn-play {
+    width: 6% !important;
+    height: 10% !important;
+}
+
+/* 7. OVERLAY UI (BACK BUTTON) */
+#video-ui-overlay {
+    position: fixed;
+    bottom: 50px;
+    left: 0;
+    width: 100vw;
+    z-index: 3000;
+    display: flex;
+    justify-content: center;
+    transition: opacity 0.5s ease;
+}
+
+#btn-exit-viz {
+    padding: 15px 40px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* 8. UTILITY CLASSES */
+.hidden {
     display: none !important;
+}
+
+.invisible {
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
