@@ -1,0 +1,75 @@
+@font-face {
+    font-family: 'DilemmaSansXP';
+    src: url('dilemma-sans-black-xp.otf') format('opentype');
+}
+
+*, *::before, *::after { cursor: url('Pointer.png'), auto !important; }
+
+html, body {
+    margin: 0; padding: 0; background-color: #000;
+    display: flex; justify-content: center; align-items: center;
+    height: 100vh; width: 100vw; overflow: hidden;
+}
+
+.ps1-wrapper {
+    position: relative; width: 1920px; height: 1080px; zoom: 0.5;
+    transition: opacity 0.8s ease;
+}
+
+.ps1-wrapper.hidden { opacity: 0; pointer-events: none; }
+
+#visualizer-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: black; z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.8s ease;
+}
+
+#visualizer-overlay.visible { opacity: 1; pointer-events: auto; }
+
+#viz-canvas { width: 100%; height: 100%; }
+
+.background { width: 100%; height: 100%; display: block; pointer-events: none; }
+
+.hitbox {
+    position: absolute; cursor: url('Pointer.png'), pointer !important;
+    background: rgba(255, 255, 255, 0); 
+    transition: transform 0.1s ease-out, filter 0.1s;
+    z-index: 10; transform-origin: center;
+}
+
+.hitbox:hover { transform: scale(1.03); backdrop-filter: brightness(1.4); }
+.hitbox:active { transform: scale(0.98); }
+
+/* --- TRACK SLOTS --- */
+.track-slot-wrapper {
+    position: absolute; z-index: 4; pointer-events: none;
+    transform: translate(-50%, -50%);
+    display: flex; justify-content: center; align-items: center;
+    width: 100px; height: 100px;
+}
+.track-sphere-base { position: absolute; width: 100%; height: 100%; object-fit: contain; }
+.track-slot-number {
+    position: relative; z-index: 5;
+    font-family: 'DilemmaSansXP', sans-serif; font-size: 50px;
+    color: #FFFFFF; text-shadow: 1px 1px 0px #0022AA, 2px 2px 0px rgba(0, 0, 0, 0.5);
+}
+.active-track .track-sphere-base { filter: brightness(1.3) drop-shadow(0 0 5px white); }
+
+/* --- TIMER --- */
+.timer-container { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 5; }
+#track-display, #min-display, #sec-display {
+    position: absolute; font-family: 'DilemmaSansXP', sans-serif; font-size: 50px;
+    color: #FFFFFF; text-shadow: 2px 2px 0px #0022AA, 4px 4px 0px rgba(0, 0, 0, 0.3);
+    top: 155px; text-align: right;
+}
+#track-display { left: 505px; width: 60px; }
+#min-display { left: 685px; width: 100px; }
+#sec-display { left: 855px; width: 100px; }
+
+/* --- SHAPES --- */
+.circle { border-radius: 50%; width: 90px; height: 90px; }
+.rect { width: 206px; height: 60px; }
+.exit { width: 490px; height: 144px; }
+#btn-stop { width: 110px !important; height: 110px !important; left: 315px !important; top: 475px !important; }
+#btn-open { width: 110px !important; height: 110px !important; left: 1522px !important; top: 700px !important; }
