@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PSX CD Player</title>
+    <link rel="stylesheet" href="PSXPLAYER.css">
+</head>
+<body>
+
+    <div class="ps1-wrapper" id="main-ui">
+        <img src="PSXPLAYER.png" class="background">
+
+        <div id="track-slots-container"></div>
+
+        <div class="timer-container">
+            <span id="track-display"></span>
+            <span id="min-display">0</span>
+            <span id="sec-display">00</span>
+        </div>
+
+        <div id="btn-viz-toggle" class="hitbox circle" style="left: 832px; top: 237px; width: 28px; height: 28px;"></div>
+
+        <div id="btn-next"  class="hitbox circle" style="left: 325px; top: 73px;"></div>
+        <div id="btn-ff"    class="hitbox circle" style="left: 325px; top: 210px;"></div>
+        <div id="btn-play"  class="hitbox circle" style="left: 325px; top: 347px;"></div>
+        <div id="btn-stop"  class="hitbox circle" style="left: 325px; top: 485px;"></div>
+        <div id="btn-pause" class="hitbox circle" style="left: 325px; top: 623px;"></div>
+        <div id="btn-rw"    class="hitbox circle" style="left: 325px; top: 760px;"></div>
+        <div id="btn-prev"  class="hitbox circle" style="left: 325px; top: 897px;"></div>
+
+        <div id="btn-continue" class="hitbox rect" style="left: 487px; top: 750px;"></div>
+        <div id="btn-shuffle"  class="hitbox rect" style="left: 747px; top: 750px;"></div>
+        <div id="btn-program"  class="hitbox rect" style="left: 1009px; top: 750px;"></div>
+        <div id="btn-repeat"   class="hitbox rect" style="left: 487px; top: 896px;"></div>
+        <div id="btn-time"     class="hitbox rect" style="left: 747px; top: 896px;"></div>
+
+        <div id="btn-exit"     class="hitbox exit"   style="left: 1075px; top: 874px;"></div>
+        <div id="btn-open"     class="hitbox circle" style="left: 1522px; top: 700px;" title="Load Disc (MP3)"></div>
+    </div>
+
+    <div id="visualizer-overlay">
+        <canvas id="viz-canvas"></canvas>
+    </div>
+
+    <input type="file" id="file-selector" accept="audio/mp3" multiple style="display:none;">
+    <audio id="audio-engine"></audio>
+
+    <script src="PSXPLAYER.js"></script>
+</body>
+</html>
